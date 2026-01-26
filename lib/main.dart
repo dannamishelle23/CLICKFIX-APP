@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dashboard/dashboard_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'auth/login_screen.dart';
 import 'auth/reset_password_screen.dart';
 import 'splash/splash_screen.dart';
@@ -29,11 +29,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'UrbanReport',
+      title: 'ClickFix',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.blueAccent,
+        colorSchemeSeed: const Color(0xFF1e3a8a),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.grey.shade100,
@@ -63,22 +63,23 @@ class _AuthGateState extends State<AuthGate> {
   void _setupAuthListener() {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
-      
+
       if (event == AuthChangeEvent.passwordRecovery) {
         setState(() => _showResetPassword = true);
         return;
       }
-      
+
       if (event == AuthChangeEvent.signedIn) {
         if (!isManualLogin) {
-          pendingConfirmationMessage = 'Cuenta confirmada. Por favor inicia sesion.';
+          pendingConfirmationMessage =
+              'Cuenta confirmada. Por favor inicia sesion.';
           await Future.delayed(const Duration(seconds: 2));
           await Supabase.instance.client.auth.signOut();
         }
         isManualLogin = false;
         if (mounted) setState(() {});
       }
-      
+
       if (event == AuthChangeEvent.signedOut) {
         if (mounted) setState(() {});
       }
@@ -99,6 +100,80 @@ class _AuthGateState extends State<AuthGate> {
       return LoginScreen(confirmationMessage: msg);
     }
 
-    return const DashboardScreen();
+    return const _HomeScreen();
+  }
+}
+
+class _HomeScreen extends StatelessWidget {
+  const _HomeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata;
+    final rol = metadata?['rol'] ?? 'cliente';
+    final nombre = metadata?['nombre_completo'] ?? 'Usuario';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ClickFix'),
+        backgroundColor: const Color(0xFF1e3a8a),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                size: 80,
+                color: Color(0xFF10b981),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Bienvenido, $nombre!',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Rol: ${rol.toString().toUpperCase()}',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF3b82f6)),
+                ),
+                child: const Text(
+                  'El dashboard completo se implementara en la siguiente fase.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF1e40af)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
