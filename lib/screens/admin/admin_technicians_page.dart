@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/database_service.dart';
 
 class AdminTechniciansPage extends StatefulWidget {
@@ -36,7 +37,7 @@ class _AdminTechniciansPageState extends State<AdminTechniciansPage>
 
   Future<void> _loadTechnicians() async {
     try {
-      final technicians = await DatabaseService.getTechnicians();
+      final technicians = await DatabaseService.getAllTechnicians();
       
       if (mounted) {
         setState(() {
@@ -88,86 +89,157 @@ class _AdminTechniciansPageState extends State<AdminTechniciansPage>
   }
 
   void _verifyTechnician(Map<String, dynamic> technician) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF4EBD3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Verificar Tecnico',
-          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF555879)),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFFF4EBD3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        'Verificar Tecnico',
+        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF555879)),
+      ),
+      content: Text(
+        'Deseas verificar a ${technician['nombre']}?',
+        style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF555879)),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar', style: TextStyle(color: Color(0xFF98A1BC))),
         ),
-        content: Text(
-          'Deseas verificar a ${technician['nombre']}?',
-          style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF555879)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Color(0xFF98A1BC))),
-          ),
-          ElevatedButton(
-            onPressed: () {
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            try {
+              // Actualizar en Supabase
+              final adminId = DatabaseService.currentUserId;
+              if (adminId != null) {
+                await DatabaseService.verifyTechnician(technician['id'], adminId);
+              }
+              
+              // Enviar correo de aprobacion
+              await Supabase.instance.client.functions.invoke(
+                'send-technician-email',
+                body: {
+                  'email': technician['email'],
+                  'nombre': technician['nombre'],
+                  'tipo': 'aprobado',
+                },
+              );
+              
               setState(() {
                 technician['verificado'] = true;
               });
-              Navigator.pop(context);
-              // TODO: Actualizar en Supabase y enviar notificacion
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tecnico verificado correctamente'),
-                  backgroundColor: Color(0xFF27AE60),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF27AE60)),
-            child: const Text('Verificar', style: TextStyle(color: Colors.white)),
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tecnico verificado y notificado'),
+                    backgroundColor: Color(0xFF27AE60),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF27AE60)),
+          child: const Text('Verificar', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
+
+  void _rejectTechnician(Map<String, dynamic> technician) {
+  final motivoController = TextEditingController();
+  
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFFF4EBD3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        'Rechazar Tecnico',
+        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF555879)),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Deseas rechazar a ${technician['nombre']}?',
+            style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF555879)),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: motivoController,
+            decoration: const InputDecoration(
+              labelText: 'Motivo del rechazo',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
           ),
         ],
       ),
-    );
-  }
-
-  void _rejectTechnician(Map<String, dynamic> technician) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF4EBD3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Rechazar Tecnico',
-          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Color(0xFF555879)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar', style: TextStyle(color: Color(0xFF98A1BC))),
         ),
-        content: Text(
-          'Deseas rechazar a ${technician['nombre']}?',
-          style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF555879)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Color(0xFF98A1BC))),
-          ),
-          ElevatedButton(
-            onPressed: () {
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            try {
+              // Enviar correo de rechazo
+              await Supabase.instance.client.functions.invoke(
+                'send-technician-email',
+                body: {
+                  'email': technician['email'],
+                  'nombre': technician['nombre'],
+                  'tipo': 'rechazado',
+                  'motivo': motivoController.text.isNotEmpty 
+                      ? motivoController.text 
+                      : 'Documentacion incompleta',
+                },
+              );
+              
               setState(() {
                 _technicians.remove(technician);
               });
-              Navigator.pop(context);
-              // TODO: Actualizar en Supabase y enviar notificacion
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tecnico rechazado'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Rechazar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tecnico rechazado y notificado'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Rechazar', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

@@ -72,8 +72,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
   Future<void> _loadStats() async {
     try {
       // Cargar estadísticas desde Supabase
-      final users = await DatabaseService.getUsers();
-      final technicians = await DatabaseService.getTechnicians();
+      final users = await DatabaseService.getAllUsers();
+      final technicians = await DatabaseService.getAllTechnicians();
       final serviceRequests = await DatabaseService.getServiceRequests();
       final services = await DatabaseService.getServices();
       final reviews = await DatabaseService.getReviews();

@@ -37,7 +37,7 @@ class _AdminUsersPageState extends State<AdminUsersPage>
 
   Future<void> _loadUsers() async {
     try {
-      final users = await DatabaseService.getUsers();
+      final users = await DatabaseService.getAllUsers();
       
       if (mounted) {
         setState(() {
