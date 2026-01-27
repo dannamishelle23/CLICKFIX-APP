@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 
 class AuthInput extends StatelessWidget {
   final TextEditingController controller;
@@ -41,41 +42,42 @@ class AuthInput extends StatelessWidget {
         enableSuggestions: enableSuggestions,
         textCapitalization: textCapitalization,
         maxLines: maxLines,
+        style: const TextStyle(color: AppColors.textDark),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(
-            color: Color(0xFF1e3a8a),
+            color: AppColors.primary,
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon, color: const Color(0xFF3b82f6))
+              ? Icon(prefixIcon, color: AppColors.secondary)
               : null,
           suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFe2e8f0),
+              color: AppColors.secondary,
               width: 1.5,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFF3b82f6),
+              color: AppColors.secondary,
               width: 1.5,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFF1e3a8a),
+              color: AppColors.primary,
               width: 2,
             ),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(
-              color: Color(0xFFdc2626),
+              color: AppColors.error,
               width: 1.5,
             ),
           ),
@@ -84,7 +86,7 @@ class AuthInput extends StatelessWidget {
             vertical: 14,
           ),
           filled: true,
-          fillColor: const Color(0xFFF8FAFC),
+          fillColor: AppColors.background,
         ),
       ),
     );

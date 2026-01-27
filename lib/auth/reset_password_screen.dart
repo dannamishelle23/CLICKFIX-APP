@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/app_colors.dart';
 import 'auth_service.dart';
 import 'widgets/auth_button.dart';
 import 'widgets/auth_input.dart';
@@ -84,11 +85,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
 
   Color get _passwordStrengthColor {
     if (_passwordStrength < 0.34) {
-      return const Color(0xFFdc2626);
+      return AppColors.error;
     } else if (_passwordStrength < 0.67) {
-      return const Color(0xFFf59e0b);
+      return AppColors.warning;
     } else {
-      return const Color(0xFF10b981);
+      return AppColors.success;
     }
   }
 
@@ -117,7 +118,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: const Color(0xFFdc2626),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -127,7 +128,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: const Color(0xFF10b981),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -146,7 +147,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               const Icon(
                 Icons.lock_reset,
                 size: 70,
-                color: Color(0xFF1e3a8a),
+                color: AppColors.primary,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -154,15 +155,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Ingresa tu nueva contrasena',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: AppColors.secondary,
                 ),
               ),
               const SizedBox(height: 32),
@@ -212,7 +214,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                     return LinearProgressIndicator(
                       value: value,
                       minHeight: 6,
-                      backgroundColor: Colors.grey.shade300,
+                      backgroundColor: AppColors.secondary.withOpacity(0.3),
                       color: _passwordStrengthColor,
                     );
                   },
@@ -279,14 +281,14 @@ class _PasswordCheck extends StatelessWidget {
       children: [
         Icon(
           checked ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: checked ? Colors.green : Colors.grey,
+          color: checked ? AppColors.success : AppColors.secondary,
           size: 18,
         ),
         const SizedBox(width: 8),
         Text(
           text,
           style: TextStyle(
-            color: checked ? Colors.green : Colors.grey,
+            color: checked ? AppColors.success : AppColors.secondary,
             fontSize: 13,
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/app_colors.dart';
 import 'auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
@@ -81,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: const Color(0xFFdc2626),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -99,10 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: const Color(0xFFe2e8f0),
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF1e3a8a),
+                  color: AppColors.primary,
                   width: 2,
                   style: BorderStyle.solid,
                 ),
@@ -113,18 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF64748b),
+                    color: AppColors.secondary,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Servicios tecnicos a tu alcance',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: AppColors.secondary,
               ),
             ),
             const SizedBox(height: 32),
@@ -183,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text(
                   'Olvide mi contrasena',
                   style: TextStyle(
-                    color: Color(0xFF1e3a8a),
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
