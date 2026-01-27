@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 
 class AuthLayout extends StatelessWidget {
   final String title;
@@ -21,8 +22,8 @@ class AuthLayout extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0f172a),
-              Color(0xFF1e3a8a),
+              AppColors.primary,
+              AppColors.secondary,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -36,7 +37,7 @@ class AuthLayout extends StatelessWidget {
                   top: 8,
                   left: 8,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: AppColors.textLight),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -47,6 +48,7 @@ class AuthLayout extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: Card(
                       elevation: 8,
+                      color: AppColors.cardBackground,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -61,6 +63,7 @@ class AuthLayout extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
                                 ),
                               ),
                               const SizedBox(height: 24),

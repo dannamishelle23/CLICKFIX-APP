@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 
 class AuthButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool loading;
   final Color? backgroundColor;
+  final bool isSecondary;
 
   const AuthButton({
     super.key,
@@ -12,6 +14,7 @@ class AuthButton extends StatelessWidget {
     this.onPressed,
     this.loading = false,
     this.backgroundColor,
+    this.isSecondary = false,
   });
 
   @override
@@ -22,21 +25,22 @@ class AuthButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? const Color(0xFF1e3a8a),
-          disabledBackgroundColor: const Color(0xFF94a3b8),
-          foregroundColor: Colors.white,
+          backgroundColor: backgroundColor ?? 
+              (isSecondary ? AppColors.secondary : AppColors.primary),
+          disabledBackgroundColor: AppColors.secondary,
+          foregroundColor: AppColors.textLight,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
           elevation: 4,
-          shadowColor: const Color(0xFF1e3a8a),
+          shadowColor: AppColors.primary.withOpacity(0.3),
         ),
         child: loading
             ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: AppColors.textLight,
                   strokeWidth: 2,
                 ),
               )

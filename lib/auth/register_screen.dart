@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'auth_service.dart';
+import '../core/app_colors.dart';
 import 'register_client_screen.dart';
 import 'register_technician_screen.dart';
 import 'widgets/auth_layout.dart';
@@ -19,7 +18,7 @@ class RegisterScreen extends StatelessWidget {
           const Icon(
             Icons.person_add_alt_1,
             size: 70,
-            color: Color(0xFF1e3a8a),
+            color: AppColors.primary,
           ),
           const SizedBox(height: 16),
           const Text(
@@ -27,15 +26,16 @@ class RegisterScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Que tipo de cuenta deseas crear?',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade700,
+              color: AppColors.secondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -43,7 +43,7 @@ class RegisterScreen extends StatelessWidget {
             icon: Icons.person,
             title: 'Soy Cliente',
             description: 'Necesito contratar servicios tecnicos',
-            color: const Color(0xFF3b82f6),
+            color: AppColors.primary,
             onTap: () {
               Navigator.push(
                 context,
@@ -58,7 +58,7 @@ class RegisterScreen extends StatelessWidget {
             icon: Icons.build,
             title: 'Soy Tecnico',
             description: 'Ofrezco mis servicios tecnicos',
-            color: const Color(0xFF10b981),
+            color: AppColors.secondary,
             onTap: () {
               Navigator.push(
                 context,
@@ -132,9 +132,9 @@ class _RoleCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.grey.shade600,
+                      color: AppColors.secondary,
                     ),
                   ),
                 ],

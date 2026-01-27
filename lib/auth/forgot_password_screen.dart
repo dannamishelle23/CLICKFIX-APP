@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_colors.dart';
 import 'auth_service.dart';
 import 'widgets/auth_button.dart';
 import 'widgets/auth_input.dart';
@@ -70,7 +71,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: const Color(0xFFdc2626),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -80,7 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -100,7 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
               const Icon(
                 Icons.lock_reset,
                 size: 70,
-                color: Color(0xFF1e3a8a),
+                color: AppColors.primary,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -108,15 +109,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Ingresa tu correo y te enviaremos un enlace para restablecer tu contrasena',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: AppColors.secondary,
                 ),
               ),
               const SizedBox(height: 32),

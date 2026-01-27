@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/app_colors.dart';
 import 'auth_service.dart';
 import 'widgets/auth_button.dart';
 import 'widgets/auth_input.dart';
@@ -107,11 +108,11 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
 
   Color get _passwordStrengthColor {
     if (_passwordStrength < 0.34) {
-      return const Color(0xFFdc2626);
+      return AppColors.error;
     } else if (_passwordStrength < 0.67) {
-      return const Color(0xFFf59e0b);
+      return AppColors.warning;
     } else {
-      return const Color(0xFF10b981);
+      return AppColors.success;
     }
   }
 
@@ -246,7 +247,7 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -256,7 +257,7 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -276,7 +277,7 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
               const Icon(
                 Icons.build,
                 size: 60,
-                color: Color(0xFF10b981),
+                color: AppColors.primary,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -284,6 +285,7 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -292,9 +294,9 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                     ? 'Paso 1: Datos personales'
                     : 'Paso 2: Datos profesionales',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: AppColors.secondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -306,8 +308,8 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                     width: 40,
                     height: 2,
                     color: _currentPage >= 1
-                        ? const Color(0xFF10b981)
-                        : Colors.grey.shade300,
+                        ? AppColors.primary
+                        : AppColors.secondary.withOpacity(0.3),
                   ),
                   _StepIndicator(isActive: _currentPage >= 1, step: 2),
                 ],
@@ -329,7 +331,6 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                 AuthButton(
                   text: 'Siguiente',
                   onPressed: _nextPage,
-                  backgroundColor: const Color(0xFF10b981),
                 )
               else
                 Row(
@@ -339,7 +340,8 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                         onPressed: _previousPage,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: Color(0xFF10b981)),
+                          side: const BorderSide(color: AppColors.primary),
+                          foregroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -353,7 +355,6 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                         text: 'Registrarme',
                         loading: _loading,
                         onPressed: _register,
-                        backgroundColor: const Color(0xFF10b981),
                       ),
                     ),
                   ],
@@ -438,7 +439,7 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
                 return LinearProgressIndicator(
                   value: value,
                   minHeight: 6,
-                  backgroundColor: Colors.grey.shade300,
+                  backgroundColor: AppColors.secondary.withOpacity(0.3),
                   color: _passwordStrengthColor,
                 );
               },
@@ -536,20 +537,20 @@ class _RegisterTechnicianScreenState extends State<RegisterTechnicianScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
+              color: AppColors.warning.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF59E0B)),
+              border: Border.all(color: AppColors.warning),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const Icon(Icons.info_outline, color: Color(0xFFF59E0B)),
-                const SizedBox(width: 12),
+                Icon(Icons.info_outline, color: AppColors.warning),
+                SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Despues del registro, un administrador revisara tu perfil y certificados antes de aprobar tu cuenta.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.amber.shade900,
+                      color: AppColors.textDark,
                     ),
                   ),
                 ),
@@ -577,14 +578,14 @@ class _StepIndicator extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF10b981) : Colors.grey.shade300,
+        color: isActive ? AppColors.primary : AppColors.secondary.withOpacity(0.3),
         shape: BoxShape.circle,
       ),
       child: Center(
         child: Text(
           '$step',
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.grey.shade600,
+            color: isActive ? AppColors.textLight : AppColors.secondary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -608,14 +609,14 @@ class _PasswordCheck extends StatelessWidget {
       children: [
         Icon(
           checked ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: checked ? Colors.green : Colors.grey,
+          color: checked ? AppColors.success : AppColors.secondary,
           size: 18,
         ),
         const SizedBox(width: 8),
         Text(
           text,
           style: TextStyle(
-            color: checked ? Colors.green : Colors.grey,
+            color: checked ? AppColors.success : AppColors.secondary,
             fontSize: 13,
           ),
         ),

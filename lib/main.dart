@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/login_screen.dart';
 import 'auth/reset_password_screen.dart';
+import 'core/app_colors.dart';
 import 'splash/splash_screen.dart';
 
 bool isManualLogin = false;
@@ -33,10 +34,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF1e3a8a),
+        colorSchemeSeed: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.background,
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: AppColors.background,
         ),
       ),
       home: SplashScreen(nextScreen: const AuthGate()),
@@ -117,8 +119,8 @@ class _HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ClickFix'),
-        backgroundColor: const Color(0xFF1e3a8a),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textLight,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -137,7 +139,7 @@ class _HomeScreen extends StatelessWidget {
               const Icon(
                 Icons.check_circle,
                 size: 80,
-                color: Color(0xFF10b981),
+                color: AppColors.success,
               ),
               const SizedBox(height: 24),
               Text(
@@ -145,29 +147,30 @@ class _HomeScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Rol: ${rol.toString().toUpperCase()}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
-                  color: Colors.grey.shade600,
+                  color: AppColors.secondary,
                 ),
               ),
               const SizedBox(height: 32),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3b82f6)),
+                  border: Border.all(color: AppColors.primary),
                 ),
                 child: const Text(
                   'El dashboard completo se implementara en la siguiente fase.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF1e40af)),
+                  style: TextStyle(color: AppColors.textDark),
                 ),
               ),
             ],

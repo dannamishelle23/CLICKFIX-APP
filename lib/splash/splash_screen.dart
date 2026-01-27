@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_colors.dart';
+
 class SplashScreen extends StatefulWidget {
   final Widget nextScreen;
 
@@ -72,8 +74,8 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0f172a),
-              Color(0xFF1e3a8a),
+              AppColors.primary,
+              AppColors.secondary,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -94,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.cardBackground,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
@@ -110,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1e3a8a),
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -121,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.textLight,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -129,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
                         'Servicios tecnicos a tu alcance',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                          color: AppColors.textLight.withOpacity(0.8),
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -137,7 +139,7 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 32,
                         height: 32,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AppColors.textLight,
                           strokeWidth: 3,
                         ),
                       ),
