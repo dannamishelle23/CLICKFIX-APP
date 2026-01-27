@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminTechniciansPage extends StatefulWidget {
   const AdminTechniciansPage({super.key});
@@ -12,8 +13,9 @@ class _AdminTechniciansPageState extends State<AdminTechniciansPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _technicians;
+  List<Map<String, dynamic>> _technicians = [];
   String _selectedFilter = 'pendientes';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,46 +31,45 @@ class _AdminTechniciansPageState extends State<AdminTechniciansPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadTechnicians();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _technicians = [
-      {
-        'id': '1',
-        'nombre': 'Carlos Martinez',
-        'email': 'carlos@email.com',
-        'telefono': '+57 310 9876543',
-        'especialidades': ['Plomeria', 'Electricidad'],
-        'anios_experiencia': 5,
-        'verificado': false,
-        'certificados': 2,
-        'created_at': DateTime.now().subtract(const Duration(days: 2)),
-      },
-      {
-        'id': '2',
-        'nombre': 'Juan Rodriguez',
-        'email': 'juan@email.com',
-        'telefono': '+57 320 1111111',
-        'especialidades': ['Carpinteria'],
-        'anios_experiencia': 8,
-        'verificado': false,
-        'certificados': 3,
-        'created_at': DateTime.now().subtract(const Duration(days: 5)),
-      },
-      {
-        'id': '3',
-        'nombre': 'Pedro Gomez',
-        'email': 'pedro@email.com',
-        'telefono': '+57 315 2222222',
-        'especialidades': ['Electricidad', 'Aire Acondicionado'],
-        'anios_experiencia': 10,
-        'verificado': true,
-        'certificados': 5,
-        'created_at': DateTime.now().subtract(const Duration(days: 30)),
-      },
-    ];
+  Future<void> _loadTechnicians() async {
+    try {
+      final technicians = await DatabaseService.getTechnicians();
+      
+      if (mounted) {
+        setState(() {
+          _technicians = technicians.map((t) {
+            final user = t['users'] as Map<String, dynamic>?;
+            final specialties = t['technician_specialties'] as List<dynamic>? ?? [];
+            final certificates = t['certificates'] as List<dynamic>? ?? [];
+            return {
+              ...t,
+              'nombre': user?['nombre_completo'] ?? 'Sin nombre',
+              'email': user?['email'] ?? '',
+              'telefono': user?['telefono'] ?? '',
+              'especialidades': specialties.map((s) => s['specialties']?['nombre'] ?? '').toList(),
+              'anios_experiencia': t['anios_experiencia'] ?? 0,
+              'verificado': t['verificado_por'] != null,
+              'certificados': certificates.length,
+              'created_at': t['created_at'] != null ? DateTime.parse(t['created_at']) : DateTime.now(),
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar técnicos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

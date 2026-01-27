@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminRequestsPage extends StatefulWidget {
   const AdminRequestsPage({super.key});
@@ -12,8 +13,9 @@ class _AdminRequestsPageState extends State<AdminRequestsPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _requests;
+  List<Map<String, dynamic>> _requests = [];
   String _selectedFilter = 'todas';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,49 +31,42 @@ class _AdminRequestsPageState extends State<AdminRequestsPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadRequests();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _requests = [
-      {
-        'id': '1',
-        'descripcion': 'Fuga de agua en el bano principal',
-        'cliente': 'Maria Garcia',
-        'direccion': 'Calle 45 #12-34, Bogota',
-        'estado': 'solicitud',
-        'cotizaciones': 3,
-        'fecha': DateTime.now().subtract(const Duration(hours: 5)),
-      },
-      {
-        'id': '2',
-        'descripcion': 'Instalacion de tomacorrientes',
-        'cliente': 'Juan Perez',
-        'direccion': 'Carrera 15 #78-90, Bogota',
-        'estado': 'asignado',
-        'cotizaciones': 5,
-        'fecha': DateTime.now().subtract(const Duration(days: 1)),
-      },
-      {
-        'id': '3',
-        'descripcion': 'Reparacion de puerta',
-        'cliente': 'Ana Rodriguez',
-        'direccion': 'Avenida 68 #23-45, Bogota',
-        'estado': 'completado',
-        'cotizaciones': 2,
-        'fecha': DateTime.now().subtract(const Duration(days: 3)),
-      },
-      {
-        'id': '4',
-        'descripcion': 'Pintura de habitacion',
-        'cliente': 'Carlos Lopez',
-        'direccion': 'Calle 100 #50-60, Bogota',
-        'estado': 'cancelado',
-        'cotizaciones': 0,
-        'fecha': DateTime.now().subtract(const Duration(days: 5)),
-      },
-    ];
+  Future<void> _loadRequests() async {
+    try {
+      final requests = await DatabaseService.getServiceRequests();
+      
+      if (mounted) {
+        setState(() {
+          _requests = requests.map((r) {
+            final user = r['users'] as Map<String, dynamic>?;
+            final quotes = r['quotes'] as List<dynamic>? ?? [];
+            return {
+              ...r,
+              'descripcion': r['descripcion_problema'] ?? 'Sin descripción',
+              'cliente': user?['nombre_completo'] ?? 'Cliente',
+              'direccion': r['direccion'] ?? 'Sin dirección',
+              'estado': r['estado'] ?? 'pendiente',
+              'cotizaciones': quotes.length,
+              'fecha': r['created_at'] != null ? DateTime.parse(r['created_at']) : DateTime.now(),
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar solicitudes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
