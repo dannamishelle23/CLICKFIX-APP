@@ -39,6 +39,9 @@ dependencies:
   image_picker: ^1.0.7            # Seleccionar imagenes de galeria/camara
   permission_handler: ^11.3.0     # Manejo de permisos (camara, ubicacion)
   intl: ^0.19.0                   # Formateo de fechas en español
+  onesignal_flutter: ^5.1.6       # Notificaciones push con OneSignal
+  geolocator: ^11.0.0             # Obtener ubicacion del dispositivo
+  geocoding: ^3.0.0               # Convertir coordenadas a direcciones
 
 dev_dependencies:
   flutter_test:

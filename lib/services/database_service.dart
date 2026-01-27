@@ -256,7 +256,7 @@ class DatabaseService {
     if (verified == true) {
       query = query.not('verificado_por', 'is', null);
     } else if (verified == false) {
-      query = query.is_('verificado_por', null);
+      query = query.isFilter('verificado_por', null);
     }
     
     final response = await query.order('created_at', ascending: false);

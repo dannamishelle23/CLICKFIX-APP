@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/login_screen.dart';
+import 'services/onesignal_service.dart';
 import 'auth/reset_password_screen.dart';
 import 'core/app_colors.dart';
 import 'splash/splash_screen.dart';
@@ -42,6 +43,9 @@ void main() async {
     ),
     debug: false,
   );
+  
+  await OneSignalService.initialize();
+  
   runApp(const MyApp());
 }
 
@@ -108,6 +112,7 @@ class _AuthGateState extends State<AuthGate> {
   void _setupAuthListener() {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
+      final session = data.session;
 
       if (event == AuthChangeEvent.passwordRecovery) {
         setState(() => _showResetPassword = true);
@@ -120,12 +125,19 @@ class _AuthGateState extends State<AuthGate> {
               'Cuenta confirmada. Por favor inicia sesion.';
           await Future.delayed(const Duration(seconds: 2));
           await Supabase.instance.client.auth.signOut();
+        } else {
+          if (session?.user != null) {
+            await OneSignalService.setUserId(session!.user.id);
+            final rol = session.user.userMetadata?['rol'] ?? 'cliente';
+            await OneSignalService.setUserTags({'rol': rol});
+          }
         }
         isManualLogin = false;
         if (mounted) setState(() {});
       }
 
       if (event == AuthChangeEvent.signedOut) {
+        await OneSignalService.removeUserId();
         if (mounted) setState(() {});
       }
     });
