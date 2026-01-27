@@ -37,6 +37,8 @@ dependencies:
   supabase_flutter: ^2.3.4        # Conectar a Supabase
   flutter_dotenv: ^5.0.0          # Cargar variables de entorno
   image_picker: ^1.0.7            # Seleccionar imagenes de galeria/camara
+  permission_handler: ^11.3.0     # Manejo de permisos (camara, ubicacion)
+  intl: ^0.19.0                   # Formateo de fechas en español
 
 dev_dependencies:
   flutter_test:
@@ -70,22 +72,23 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # Fuentes personalizadas
+  # NOTA: Debes descargar los archivos .ttf y colocarlos en la carpeta fonts/
+  # Puedes descargarlos de Google Fonts: https://fonts.google.com/
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: fonts/Montserrat-Regular.ttf
+        - asset: fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: fonts/Montserrat-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Montserrat-Light.ttf
+          weight: 300
+    - family: Spectral
+      fonts:
+        - asset: fonts/Spectral-Regular.ttf
+        - asset: fonts/Spectral-Bold.ttf
+          weight: 700
+        - asset: fonts/Spectral-Light.ttf
+          weight: 300
