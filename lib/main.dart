@@ -7,6 +7,28 @@ import 'auth/reset_password_screen.dart';
 import 'core/app_colors.dart';
 import 'splash/splash_screen.dart';
 
+import 'screens/user_profile/user_profile_page.dart';
+import 'screens/technician_profile/technician_profile_page.dart';
+import 'screens/notifications/notifications_page.dart';
+import 'screens/service_request_create/service_request_create_page.dart';
+import 'screens/service_requests/service_requests_list_page.dart';
+import 'screens/services/services_in_progress_page.dart';
+import 'screens/rate_service/rate_service_page.dart';
+import 'screens/service_history/service_history_page.dart';
+import 'screens/technician_specialties/technician_specialties_page.dart';
+import 'screens/technician_certificates/technician_certificates_page.dart';
+import 'screens/available_requests/available_requests_page.dart';
+import 'screens/my_quotations/my_quotations_page.dart';
+import 'screens/assigned_services/assigned_services_page.dart';
+import 'screens/received_reviews/received_reviews_page.dart';
+import 'screens/admin/admin_dashboard_page.dart';
+import 'screens/admin/admin_users_page.dart';
+import 'screens/admin/admin_technicians_page.dart';
+import 'screens/admin/admin_specialties_page.dart';
+import 'screens/admin/admin_requests_page.dart';
+import 'screens/admin/admin_services_page.dart';
+import 'screens/admin/admin_reviews_page.dart';
+
 bool isManualLogin = false;
 String? pendingConfirmationMessage;
 
@@ -42,6 +64,29 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: SplashScreen(nextScreen: const AuthGate()),
+      routes: {
+        '/notifications': (context) => const NotificationsPage(),
+        '/userProfile': (context) => const UserProfilePage(),
+        '/technicianProfile': (context) => const TechnicianProfilePage(),
+        '/serviceRequestCreate': (context) => const ServiceRequestCreatePage(),
+        '/serviceRequests': (context) => const ServiceRequestsListPage(),
+        '/serviceInProgress': (context) => const ServiceInProgressPage(),
+        '/rateService': (context) => const RateServicePage(),
+        '/serviceHistory': (context) => const ServiceHistoryPage(),
+        '/technicianSpecialties': (context) => const TechnicianSpecialtiesPage(),
+        '/technicianCertificates': (context) => const TechnicianCertificatesPage(),
+        '/availableRequests': (context) => const AvailableRequestsPage(),
+        '/myQuotations': (context) => const MyQuotationsPage(),
+        '/assignedServices': (context) => const AssignedServicesPage(),
+        '/receivedReviews': (context) => const ReceivedReviewsPage(),
+        '/adminDashboard': (context) => const AdminDashboardPage(),
+        '/adminUsers': (context) => const AdminUsersPage(),
+        '/adminTechnicians': (context) => const AdminTechniciansPage(),
+        '/adminSpecialties': (context) => const AdminSpecialtiesPage(),
+        '/adminRequests': (context) => const AdminRequestsPage(),
+        '/adminServices': (context) => const AdminServicesPage(),
+        '/adminReviews': (context) => const AdminReviewsPage(),
+      },
     );
   }
 }
@@ -102,26 +147,42 @@ class _AuthGateState extends State<AuthGate> {
       return LoginScreen(confirmationMessage: msg);
     }
 
-    return const _HomeScreen();
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata;
+    final rol = metadata?['rol'] ?? 'cliente';
+
+    if (rol == 'admin') {
+      return const AdminDashboardPage();
+    } else if (rol == 'tecnico') {
+      return const TechnicianDashboard();
+    } else {
+      return const ClientDashboard();
+    }
   }
 }
 
-class _HomeScreen extends StatelessWidget {
-  const _HomeScreen();
+class ClientDashboard extends StatelessWidget {
+  const ClientDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final metadata = user?.userMetadata;
-    final rol = metadata?['rol'] ?? 'cliente';
     final nombre = metadata?['nombre_completo'] ?? 'Usuario';
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF4EBD3),
       appBar: AppBar(
-        title: const Text('ClickFix'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textLight,
+        title: const Text(
+          'ClickFix',
+          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF555879),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -130,50 +191,403 @@ class _HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                size: 80,
-                color: AppColors.success,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Bienvenido, $nombre!',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF555879), Color(0xFF98A1BC)],
                 ),
-                textAlign: TextAlign.center,
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Rol: ${rol.toString().toUpperCase()}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.secondary,
-                ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 35, color: Color(0xFF555879)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola, $nombre!',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const Text(
+                          'Que necesitas reparar hoy?',
+                          style: TextStyle(color: Colors.white70, fontFamily: 'Montserrat'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary),
-                ),
-                child: const Text(
-                  'El dashboard completo se implementara en la siguiente fase.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textDark),
-                ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Acciones rapidas',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF555879),
+                fontFamily: 'Montserrat',
               ),
-            ],
+            ),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              icon: Icons.add_circle,
+              title: 'Nueva Solicitud',
+              subtitle: 'Solicita un servicio tecnico',
+              route: '/serviceRequestCreate',
+              color: const Color(0xFF27AE60),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.list_alt,
+              title: 'Mis Solicitudes',
+              subtitle: 'Ver estado de tus solicitudes',
+              route: '/serviceRequests',
+              color: const Color(0xFF3498DB),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.build,
+              title: 'Servicios en Progreso',
+              subtitle: 'Seguimiento en tiempo real',
+              route: '/serviceInProgress',
+              color: const Color(0xFFF39C12),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.history,
+              title: 'Historial',
+              subtitle: 'Servicios completados',
+              route: '/serviceHistory',
+              color: const Color(0xFF9B59B6),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.person,
+              title: 'Mi Perfil',
+              subtitle: 'Editar datos personales',
+              route: '/userProfile',
+              color: const Color(0xFF555879),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String route,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => Navigator.pushNamed(context, route),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF98A1BC)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF555879),
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF98A1BC),
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Color(0xFF98A1BC)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TechnicianDashboard extends StatelessWidget {
+  const TechnicianDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata;
+    final nombre = metadata?['nombre_completo'] ?? 'Tecnico';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4EBD3),
+      appBar: AppBar(
+        title: const Text(
+          'ClickFix Tecnico',
+          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF555879),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF555879), Color(0xFF98A1BC)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.engineering, size: 35, color: Color(0xFF555879)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola, $nombre!',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const Text(
+                          'Panel de tecnico',
+                          style: TextStyle(color: Colors.white70, fontFamily: 'Montserrat'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Buscar trabajo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF555879),
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              icon: Icons.search,
+              title: 'Solicitudes Disponibles',
+              subtitle: 'Encuentra nuevos trabajos',
+              route: '/availableRequests',
+              color: const Color(0xFF27AE60),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.request_quote,
+              title: 'Mis Cotizaciones',
+              subtitle: 'Cotizaciones enviadas',
+              route: '/myQuotations',
+              color: const Color(0xFF3498DB),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Mis servicios',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF555879),
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              icon: Icons.assignment,
+              title: 'Servicios Asignados',
+              subtitle: 'Trabajos pendientes',
+              route: '/assignedServices',
+              color: const Color(0xFFF39C12),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.star,
+              title: 'Mis Resenas',
+              subtitle: 'Ver calificaciones recibidas',
+              route: '/receivedReviews',
+              color: const Color(0xFF9B59B6),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Mi perfil',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF555879),
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              icon: Icons.person,
+              title: 'Perfil Tecnico',
+              subtitle: 'Editar datos profesionales',
+              route: '/technicianProfile',
+              color: const Color(0xFF555879),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.category,
+              title: 'Mis Especialidades',
+              subtitle: 'Gestionar especialidades',
+              route: '/technicianSpecialties',
+              color: const Color(0xFF1ABC9C),
+            ),
+            _buildMenuCard(
+              context,
+              icon: Icons.workspace_premium,
+              title: 'Mis Certificados',
+              subtitle: 'Subir certificaciones',
+              route: '/technicianCertificates',
+              color: const Color(0xFFE74C3C),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String route,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => Navigator.pushNamed(context, route),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF98A1BC)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF555879),
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF98A1BC),
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Color(0xFF98A1BC)),
+              ],
+            ),
           ),
         ),
       ),
