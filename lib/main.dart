@@ -13,7 +13,6 @@ import 'screens/notifications/notifications_page.dart';
 import 'screens/service_request_create/service_request_create_page.dart';
 import 'screens/service_requests/service_requests_list_page.dart';
 import 'screens/services/services_in_progress_page.dart';
-import 'screens/rate_service/rate_service_page.dart';
 import 'screens/service_history/service_history_page.dart';
 import 'screens/technician_specialties/technician_specialties_page.dart';
 import 'screens/technician_certificates/technician_certificates_page.dart';
@@ -71,7 +70,6 @@ class MyApp extends StatelessWidget {
         '/serviceRequestCreate': (context) => const ServiceRequestCreatePage(),
         '/serviceRequests': (context) => const ServiceRequestsListPage(),
         '/serviceInProgress': (context) => const ServiceInProgressPage(),
-        '/rateService': (context) => const RateServicePage(),
         '/serviceHistory': (context) => const ServiceHistoryPage(),
         '/technicianSpecialties': (context) => const TechnicianSpecialtiesPage(),
         '/technicianCertificates': (context) => const TechnicianCertificatesPage(),
