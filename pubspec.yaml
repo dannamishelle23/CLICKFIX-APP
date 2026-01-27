@@ -42,6 +42,7 @@ dependencies:
   onesignal_flutter: ^5.1.6       # Notificaciones push con OneSignal
   geolocator: ^11.0.0             # Obtener ubicacion del dispositivo
   geocoding: ^3.0.0               # Convertir coordenadas a direcciones
+  shared_preferences: ^2.2.2      # Guardar preferencias locales
 
 dev_dependencies:
   flutter_test:
@@ -70,8 +71,6 @@ flutter:
     - .env
     - assets/logo.png
 
-  shared_preferences: ^2.2.2
-  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

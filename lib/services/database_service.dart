@@ -264,6 +264,16 @@ class DatabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  /// Obtener tecnicos verificados con su ubicacion para recomendaciones
+  static Future<List<Map<String, dynamic>>> getTechniciansWithLocation() async {
+    final response = await _client
+        .from('technicians')
+        .select('*, users(*), technician_specialties(*, specialties(*))')
+        .not('verificado_por', 'is', null)
+        .order('rating_promedio', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   static Future<void> verifyTechnician(String technicianId, String adminId) async {
     await _client.from('technicians').update({
       'verificado_por': adminId,

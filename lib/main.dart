@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth/login_screen.dart';
 import 'services/onesignal_service.dart';
 import 'auth/reset_password_screen.dart';
 import 'core/app_colors.dart';
 import 'splash/splash_screen.dart';
+import 'screens/location_permission/location_permission_page.dart';
 
 import 'screens/user_profile/user_profile_page.dart';
 import 'screens/technician_profile/technician_profile_page.dart';
@@ -171,11 +173,83 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-class ClientDashboard extends StatelessWidget {
+class ClientDashboard extends StatefulWidget {
   const ClientDashboard({super.key});
 
   @override
+  State<ClientDashboard> createState() => _ClientDashboardState();
+}
+
+class _ClientDashboardState extends State<ClientDashboard> {
+  bool _checkingPermission = true;
+  bool _showPermissionPage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasAskedPermission = prefs.getBool('location_permission_asked') ?? false;
+    
+    if (!hasAskedPermission) {
+      if (mounted) {
+        setState(() {
+          _showPermissionPage = true;
+          _checkingPermission = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _checkingPermission = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onPermissionGranted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('location_permission_asked', true);
+    await prefs.setBool('location_permission_granted', true);
+    if (mounted) {
+      setState(() {
+        _showPermissionPage = false;
+      });
+    }
+  }
+
+  Future<void> _onPermissionDenied() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('location_permission_asked', true);
+    await prefs.setBool('location_permission_granted', false);
+    if (mounted) {
+      setState(() {
+        _showPermissionPage = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_checkingPermission) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4EBD3),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF555879)),
+        ),
+      );
+    }
+
+    if (_showPermissionPage) {
+      return LocationPermissionPage(
+        onPermissionGranted: _onPermissionGranted,
+        onPermissionDenied: _onPermissionDenied,
+      );
+    }
+
     final user = Supabase.instance.client.auth.currentUser;
     final metadata = user?.userMetadata;
     final nombre = metadata?['nombre_completo'] ?? 'Usuario';
