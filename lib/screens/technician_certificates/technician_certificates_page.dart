@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../../services/database_service.dart';
 
 class TechnicianCertificatesPage extends StatefulWidget {
   const TechnicianCertificatesPage({super.key});
@@ -20,8 +21,10 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _certificates;
+  List<Map<String, dynamic>> _certificates = [];
   final ImagePicker _imagePicker = ImagePicker();
+  bool _isLoading = true;
+  String? _technicianId;
 
   @override
   void initState() {
@@ -50,29 +53,44 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadCertificates();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase - tabla technician_certificates
-    _certificates = [
-      {
-        'id': '1',
-        'nombre': 'Certificado en Electricidad Industrial',
-        'institucion': 'SENA',
-        'fecha_emision': DateTime(2022, 5, 15),
-        'archivo_url': 'https://example.com/cert1.pdf',
-        'verificado': true,
-      },
-      {
-        'id': '2',
-        'nombre': 'Curso de Plomeria Avanzada',
-        'institucion': 'Instituto Tecnico Nacional',
-        'fecha_emision': DateTime(2021, 8, 20),
-        'archivo_url': 'https://example.com/cert2.pdf',
-        'verificado': false,
-      },
-    ];
+  Future<void> _loadCertificates() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Obtener el perfil del técnico para conseguir el technician_id
+      final technicianProfile = await DatabaseService.getTechnicianProfile(userId);
+      if (technicianProfile == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      _technicianId = technicianProfile['id'];
+      final certificates = await DatabaseService.getTechnicianCertificates(_technicianId!);
+      
+      if (mounted) {
+        setState(() {
+          _certificates = certificates;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar certificados: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -198,7 +216,7 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (nombreController.text.isEmpty || institucionController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -209,25 +227,62 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
                   return;
                 }
 
-                // TODO: Subir a Supabase Storage y guardar en tabla
-                setState(() {
-                  _certificates.add({
-                    'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                    'nombre': nombreController.text,
-                    'institucion': institucionController.text,
-                    'fecha_emision': DateTime.now(),
-                    'archivo_url': 'https://example.com/new_cert.pdf',
-                    'verificado': false,
-                  });
-                });
+                if (_technicianId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Error: No se encontró el perfil de técnico'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
 
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Certificado agregado correctamente'),
-                    backgroundColor: Color(0xFF27AE60),
-                  ),
-                );
+
+                try {
+                  String? archivoUrl;
+                  
+                  // Subir archivo al bucket si se seleccionó uno
+                  if (selectedFile != null) {
+                    final bytes = await selectedFile!.readAsBytes();
+                    final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split('/').last}';
+                    archivoUrl = await DatabaseService.uploadCertificate(
+                      _technicianId!,
+                      bytes,
+                      fileName,
+                    );
+                  }
+
+                  // Guardar en la tabla technician_certificates
+                  await DatabaseService.addCertificate({
+                    'technician_id': _technicianId,
+                    'nombre': nombreController.text,
+                    'institucion': institucionController.text,
+                    'fecha_emision': DateTime.now().toIso8601String(),
+                    'archivo_url': archivoUrl,
+                  });
+
+                  // Recargar la lista
+                  await _loadCertificates();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Certificado agregado correctamente'),
+                        backgroundColor: Color(0xFF27AE60),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al guardar certificado: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF555879),
@@ -271,18 +326,29 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: Eliminar de Supabase
-              setState(() {
-                _certificates.removeWhere((c) => c['id'] == id);
-              });
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Certificado eliminado'),
-                  backgroundColor: Color(0xFF98A1BC),
-                ),
-              );
+              try {
+                await DatabaseService.deleteCertificate(id);
+                await _loadCertificates();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Certificado eliminado'),
+                      backgroundColor: Color(0xFF98A1BC),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al eliminar: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -324,15 +390,17 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: _certificates.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: _certificates.length,
-                  itemBuilder: (context, index) {
-                    return _buildCertificateCard(_certificates[index]);
-                  },
-                ),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF555879)))
+              : _certificates.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      itemCount: _certificates.length,
+                      itemBuilder: (context, index) {
+                        return _buildCertificateCard(_certificates[index]);
+                      },
+                    ),
         ),
       ),
     );
@@ -394,7 +462,15 @@ class _TechnicianCertificatesPageState extends State<TechnicianCertificatesPage>
   }
 
   Widget _buildCertificateCard(Map<String, dynamic> certificate) {
-    final fecha = certificate['fecha_emision'] as DateTime;
+    DateTime fecha;
+    final fechaValue = certificate['fecha_emision'];
+    if (fechaValue is DateTime) {
+      fecha = fechaValue;
+    } else if (fechaValue is String) {
+      fecha = DateTime.parse(fechaValue);
+    } else {
+      fecha = DateTime.now();
+    }
     final months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
     return Container(

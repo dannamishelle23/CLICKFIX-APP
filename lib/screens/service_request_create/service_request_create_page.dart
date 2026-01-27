@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class ServiceRequestCreatePage extends StatefulWidget {
   const ServiceRequestCreatePage({super.key});
@@ -116,7 +117,7 @@ class _ServiceRequestCreatePageState extends State<ServiceRequestCreatePage>
   }
 
   /// Crear solicitud de servicio
-  void _createServiceRequest() {
+  Future<void> _createServiceRequest() async {
     // Validar campos requeridos
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,44 +163,66 @@ class _ServiceRequestCreatePageState extends State<ServiceRequestCreatePage>
       return;
     }
 
+    // Obtener el ID del usuario actual
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes iniciar sesión para crear una solicitud'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Datos de la solicitud
     final serviceRequest = {
-      'cliente_id':
-          '550e8400-e29b-41d4-a716-446655440000', // TODO: obtener de sesión
+      'cliente_id': userId,
       'descripcion_problema': _descriptionController.text.trim(),
       'direccion': _addressController.text.trim(),
       'latitud': latitude,
       'longitud': longitude,
       'estado': 'solicitud',
-      'created_at': DateTime.now().toIso8601String(),
     };
 
-    // TODO: Guardar en Supabase
-    // await supabase.from('service_requests').insert(serviceRequest);
+    try {
+      // Guardar en Supabase
+      await DatabaseService.createServiceRequest(serviceRequest);
 
-    // Mostrar éxito y volver
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Solicitud creada exitosamente'),
-        backgroundColor: Color(0xFF98A1BC),
-        duration: Duration(seconds: 2),
-      ),
-    );
+      if (!mounted) return;
 
-    // Limpiar formulario
-    _descriptionController.clear();
-    _addressController.clear();
-    _latitudeController.clear();
-    _longitudeController.clear();
-    setState(() {
-      _currentLatitude = null;
-      _currentLongitude = null;
-    });
+      // Mostrar éxito y volver
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Solicitud creada exitosamente'),
+          backgroundColor: Color(0xFF27AE60),
+          duration: Duration(seconds: 2),
+        ),
+      );
 
-    // Ir atrás
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) Navigator.pop(context);
-    });
+      // Limpiar formulario
+      _descriptionController.clear();
+      _addressController.clear();
+      _latitudeController.clear();
+      _longitudeController.clear();
+      setState(() {
+        _currentLatitude = null;
+        _currentLongitude = null;
+      });
+
+      // Ir atrás
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) Navigator.pop(context);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al crear solicitud: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // ========================================================================

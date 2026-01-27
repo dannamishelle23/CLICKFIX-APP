@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminReviewsPage extends StatefulWidget {
   const AdminReviewsPage({super.key});
@@ -12,8 +13,9 @@ class _AdminReviewsPageState extends State<AdminReviewsPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _reviews;
+  List<Map<String, dynamic>> _reviews = [];
   String _selectedFilter = 'pendientes';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,53 +31,45 @@ class _AdminReviewsPageState extends State<AdminReviewsPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadReviews();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _reviews = [
-      {
-        'id': '1',
-        'autor': 'Maria Garcia',
-        'receptor': 'Carlos Martinez',
-        'calificacion': 5,
-        'comentario': 'Excelente trabajo! Muy profesional y puntual.',
-        'servicio': 'Reparacion de tuberia',
-        'fecha': DateTime.now().subtract(const Duration(hours: 5)),
-        'estado': 'pendiente',
-      },
-      {
-        'id': '2',
-        'autor': 'Juan Perez',
-        'receptor': 'Pedro Gomez',
-        'calificacion': 2,
-        'comentario': 'El trabajo fue malo, no lo recomiendo para nada. Muy irresponsable.',
-        'servicio': 'Instalacion electrica',
-        'fecha': DateTime.now().subtract(const Duration(days: 1)),
-        'estado': 'pendiente',
-      },
-      {
-        'id': '3',
-        'autor': 'Ana Rodriguez',
-        'receptor': 'Luis Hernandez',
-        'calificacion': 4,
-        'comentario': 'Buen servicio, llego a tiempo.',
-        'servicio': 'Reparacion de puerta',
-        'fecha': DateTime.now().subtract(const Duration(days: 2)),
-        'estado': 'aprobada',
-      },
-      {
-        'id': '4',
-        'autor': 'Carlos Lopez',
-        'receptor': 'Miguel Torres',
-        'calificacion': 1,
-        'comentario': 'Pesimo servicio, contenido inapropiado en el comentario.',
-        'servicio': 'Pintura',
-        'fecha': DateTime.now().subtract(const Duration(days: 3)),
-        'estado': 'rechazada',
-      },
-    ];
+  Future<void> _loadReviews() async {
+    try {
+      final reviews = await DatabaseService.getReviews();
+      
+      if (mounted) {
+        setState(() {
+          _reviews = reviews.map((r) {
+            final autor = r['autor'] as Map<String, dynamic>?;
+            final receptor = r['receptor'] as Map<String, dynamic>?;
+            final service = r['services'] as Map<String, dynamic>?;
+            final serviceRequest = service?['service_requests'] as Map<String, dynamic>?;
+            return {
+              ...r,
+              'autor': autor?['nombre_completo'] ?? 'Usuario',
+              'receptor': receptor?['nombre_completo'] ?? 'Usuario',
+              'calificacion': r['calificacion'] ?? 0,
+              'comentario': r['comentario'] ?? '',
+              'servicio': serviceRequest?['descripcion_problema'] ?? 'Servicio',
+              'fecha': r['created_at'] != null ? DateTime.parse(r['created_at']) : DateTime.now(),
+              'estado': r['estado'] ?? 'pendiente',
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar reseñas: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

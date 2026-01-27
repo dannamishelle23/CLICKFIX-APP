@@ -108,14 +108,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: BorderStyle.solid,
                 ),
               ),
-              child: const Center(
-                child: Text(
-                  'LOGO',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
-                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.asset(
+                  'assets/logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Text(
+                        'LOGO',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

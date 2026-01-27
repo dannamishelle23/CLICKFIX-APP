@@ -5,6 +5,7 @@ import 'admin_specialties_page.dart';
 import 'admin_requests_page.dart';
 import 'admin_services_page.dart';
 import 'admin_reviews_page.dart';
+import '../../services/database_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -24,8 +25,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Estadisticas de ejemplo
-  late Map<String, dynamic> _stats;
+  // Estadisticas
+  Map<String, dynamic> _stats = {
+    'total_usuarios': 0,
+    'total_tecnicos': 0,
+    'tecnicos_pendientes': 0,
+    'total_solicitudes': 0,
+    'solicitudes_activas': 0,
+    'total_servicios': 0,
+    'servicios_completados': 0,
+    'total_resenas': 0,
+    'resenas_pendientes': 0,
+  };
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -54,22 +66,45 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadStats();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _stats = {
-      'total_usuarios': 156,
-      'total_tecnicos': 42,
-      'tecnicos_pendientes': 8,
-      'total_solicitudes': 234,
-      'solicitudes_activas': 45,
-      'total_servicios': 189,
-      'servicios_completados': 167,
-      'total_resenas': 312,
-      'resenas_pendientes': 5,
-    };
+  Future<void> _loadStats() async {
+    try {
+      // Cargar estadísticas desde Supabase
+      final users = await DatabaseService.getUsers();
+      final technicians = await DatabaseService.getTechnicians();
+      final serviceRequests = await DatabaseService.getServiceRequests();
+      final services = await DatabaseService.getServices();
+      final reviews = await DatabaseService.getReviews();
+
+      if (mounted) {
+        setState(() {
+          _stats = {
+            'total_usuarios': users.where((u) => u['rol'] == 'cliente').length,
+            'total_tecnicos': technicians.length,
+            'tecnicos_pendientes': technicians.where((t) => t['verificado_por'] == null).length,
+            'total_solicitudes': serviceRequests.length,
+            'solicitudes_activas': serviceRequests.where((r) => r['estado'] == 'pendiente' || r['estado'] == 'en_proceso').length,
+            'total_servicios': services.length,
+            'servicios_completados': services.where((s) => s['estado'] == 'completado').length,
+            'total_resenas': reviews.length,
+            'resenas_pendientes': reviews.where((r) => r['estado'] == 'pendiente').length,
+          };
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar estadísticas: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

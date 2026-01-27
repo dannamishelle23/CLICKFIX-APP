@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service_detail_technician/service_detail_technician_page.dart';
+import '../../services/database_service.dart';
 
 class AssignedServicesPage extends StatefulWidget {
   const AssignedServicesPage({super.key});
@@ -19,8 +20,9 @@ class _AssignedServicesPageState extends State<AssignedServicesPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _services;
+  List<Map<String, dynamic>> _services = [];
   String _selectedFilter = 'todos';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -49,49 +51,59 @@ class _AssignedServicesPageState extends State<AssignedServicesPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadServices();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase - servicios asignados al tecnico
-    _services = [
-      {
-        'id': '1',
-        'descripcion': 'Fuga de agua en el bano principal',
-        'cliente_nombre': 'Maria Garcia',
-        'cliente_foto': 'https://via.placeholder.com/150/555879/FFFFFF?text=MG',
-        'cliente_telefono': '+57 300 1234567',
-        'direccion': 'Calle 45 #12-34, Bogota',
-        'monto': 150000,
-        'fecha_asignacion': DateTime.now().subtract(const Duration(hours: 2)),
-        'fecha_programada': DateTime.now().add(const Duration(days: 1)),
-        'estado': 'pendiente',
-      },
-      {
-        'id': '2',
-        'descripcion': 'Reparacion de puerta de madera',
-        'cliente_nombre': 'Ana Rodriguez',
-        'cliente_foto': 'https://via.placeholder.com/150/98A1BC/FFFFFF?text=AR',
-        'cliente_telefono': '+57 310 9876543',
-        'direccion': 'Avenida 68 #23-45, Bogota',
-        'monto': 200000,
-        'fecha_asignacion': DateTime.now().subtract(const Duration(days: 1)),
-        'fecha_programada': DateTime.now(),
-        'estado': 'en_progreso',
-      },
-      {
-        'id': '3',
-        'descripcion': 'Instalacion de tomacorrientes',
-        'cliente_nombre': 'Juan Perez',
-        'cliente_foto': 'https://via.placeholder.com/150/DED3C4/555879?text=JP',
-        'cliente_telefono': '+57 320 5555555',
-        'direccion': 'Carrera 15 #78-90, Bogota',
-        'monto': 80000,
-        'fecha_asignacion': DateTime.now().subtract(const Duration(days: 3)),
-        'fecha_programada': DateTime.now().subtract(const Duration(days: 2)),
-        'estado': 'completado',
-      },
-    ];
+  Future<void> _loadServices() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Obtener el perfil del técnico
+      final technicianProfile = await DatabaseService.getTechnicianProfile(userId);
+      if (technicianProfile == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Cargar servicios asignados al técnico
+      final services = await DatabaseService.getServices(technicianId: technicianProfile['id']);
+      
+      if (mounted) {
+        setState(() {
+          _services = services.map((s) {
+            final serviceRequest = s['service_requests'] as Map<String, dynamic>?;
+            final cliente = serviceRequest?['users'] as Map<String, dynamic>?;
+            final quote = s['quotes'] as Map<String, dynamic>?;
+            return {
+              ...s,
+              'descripcion': serviceRequest?['descripcion_problema'] ?? 'Sin descripción',
+              'cliente_nombre': cliente?['nombre_completo'] ?? 'Cliente',
+              'cliente_foto': cliente?['avatar_url'] ?? 'https://via.placeholder.com/150/555879/FFFFFF?text=U',
+              'cliente_telefono': cliente?['telefono'] ?? '',
+              'direccion': serviceRequest?['direccion'] ?? 'Sin dirección',
+              'monto': quote?['monto'] ?? 0,
+              'fecha_asignacion': s['created_at'] != null ? DateTime.parse(s['created_at']) : DateTime.now(),
+              'fecha_programada': s['fecha_inicio'] != null ? DateTime.parse(s['fecha_inicio']) : DateTime.now(),
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar servicios: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

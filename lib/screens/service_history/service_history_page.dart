@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../rate_service/rate_service_page.dart';
+import '../../services/database_service.dart';
 
 class ServiceHistoryPage extends StatefulWidget {
   const ServiceHistoryPage({super.key});
@@ -19,7 +20,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _services;
+  List<Map<String, dynamic>> _services = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -48,46 +50,71 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadServiceHistory();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _services = [
-      {
-        'id': '1',
-        'descripcion': 'Reparacion de tuberia en cocina',
-        'tecnico_nombre': 'Carlos Martinez',
-        'tecnico_foto': 'https://via.placeholder.com/150/555879/FFFFFF?text=CM',
-        'especialidad': 'Plomeria',
-        'fecha_completado': DateTime.now().subtract(const Duration(days: 2)),
-        'monto': 150000,
-        'calificado': true,
-        'calificacion': 5,
-      },
-      {
-        'id': '2',
-        'descripcion': 'Instalacion de puerta nueva',
-        'tecnico_nombre': 'Diana Lopez',
-        'tecnico_foto': 'https://via.placeholder.com/150/98A1BC/FFFFFF?text=DL',
-        'especialidad': 'Carpinteria',
-        'fecha_completado': DateTime.now().subtract(const Duration(days: 7)),
-        'monto': 200000,
-        'calificado': false,
-        'calificacion': null,
-      },
-      {
-        'id': '3',
-        'descripcion': 'Reparacion electrica en sala',
-        'tecnico_nombre': 'Juan Rodriguez',
-        'tecnico_foto': 'https://via.placeholder.com/150/DED3C4/555879?text=JR',
-        'especialidad': 'Electricidad',
-        'fecha_completado': DateTime.now().subtract(const Duration(days: 15)),
-        'monto': 180000,
-        'calificado': true,
-        'calificacion': 4,
-      },
-    ];
+  Future<void> _loadServiceHistory() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Cargar servicios completados del cliente
+      final services = await DatabaseService.getServices(status: 'completado');
+      
+      // Filtrar solo los servicios del cliente actual
+      final clientServices = services.where((s) {
+        final serviceRequest = s['service_requests'] as Map<String, dynamic>?;
+        return serviceRequest?['cliente_id'] == userId;
+      }).toList();
+
+      // Cargar reseñas del cliente para saber cuáles ya calificó
+      final reviews = await DatabaseService.getReviews(autorId: userId);
+      final reviewedServiceIds = reviews.map((r) => r['service_id']).toSet();
+      
+      if (mounted) {
+        setState(() {
+          _services = clientServices.map((s) {
+            final serviceRequest = s['service_requests'] as Map<String, dynamic>?;
+            final technician = s['technicians'] as Map<String, dynamic>?;
+            final techUser = technician?['users'] as Map<String, dynamic>?;
+            final quote = s['quotes'] as Map<String, dynamic>?;
+            final isRated = reviewedServiceIds.contains(s['id']);
+            
+            // Buscar la calificación si existe
+            final review = reviews.firstWhere(
+              (r) => r['service_id'] == s['id'],
+              orElse: () => {},
+            );
+            
+            return {
+              ...s,
+              'descripcion': serviceRequest?['descripcion_problema'] ?? 'Sin descripción',
+              'tecnico_nombre': techUser?['nombre_completo'] ?? 'Técnico',
+              'tecnico_foto': techUser?['avatar_url'] ?? 'https://via.placeholder.com/150/555879/FFFFFF?text=T',
+              'especialidad': 'Servicio técnico',
+              'fecha_completado': s['fecha_fin'] != null ? DateTime.parse(s['fecha_fin']) : DateTime.now(),
+              'monto': quote?['monto'] ?? 0,
+              'calificado': isRated,
+              'calificacion': review['calificacion'],
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar historial: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

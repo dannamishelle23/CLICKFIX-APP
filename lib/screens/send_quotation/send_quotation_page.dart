@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class SendQuotationPage extends StatefulWidget {
   final Map<String, dynamic> request;
@@ -95,37 +96,52 @@ class _SendQuotationPageState extends State<SendQuotationPage>
       _isSubmitting = true;
     });
 
-    // TODO: Guardar en Supabase
-    // await supabase.from('quotes').insert({
-    //   'service_request_id': widget.request['id'],
-    //   'technician_id': currentTechnicianId,
-    //   'monto': monto,
-    //   'descripcion': _descripcionController.text.trim(),
-    //   'tiempo_estimado': _tiempoController.text.trim(),
-    //   'estado': 'pendiente',
-    // });
-    //
-    // TODO: Enviar notificacion push al cliente
-    // await sendPushNotification(
-    //   userId: widget.request['cliente_id'],
-    //   title: 'Nueva cotizacion recibida',
-    //   body: 'Un tecnico ha enviado una cotizacion para tu solicitud',
-    // );
+    try {
+      // Obtener el perfil del técnico
+      final userId = DatabaseService.currentUserId;
+      if (userId == null) {
+        throw Exception('Debes iniciar sesión');
+      }
 
-    await Future.delayed(const Duration(seconds: 1));
+      final technicianProfile = await DatabaseService.getTechnicianProfile(userId);
+      if (technicianProfile == null) {
+        throw Exception('No se encontró el perfil de técnico');
+      }
 
-    setState(() {
-      _isSubmitting = false;
-    });
+      // Guardar cotización en Supabase
+      await DatabaseService.createQuote({
+        'service_request_id': widget.request['id'],
+        'technician_id': technicianProfile['id'],
+        'monto': monto,
+        'descripcion': _descripcionController.text.trim(),
+        'tiempo_estimado': _tiempoController.text.trim(),
+        'estado': 'pendiente',
+      });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cotizacion enviada correctamente'),
-          backgroundColor: Color(0xFF27AE60),
-        ),
-      );
-      Navigator.pop(context, true);
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cotizacion enviada correctamente'),
+            backgroundColor: Color(0xFF27AE60),
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar cotización: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

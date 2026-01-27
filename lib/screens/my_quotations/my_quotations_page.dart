@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class MyQuotationsPage extends StatefulWidget {
   const MyQuotationsPage({super.key});
@@ -18,8 +19,9 @@ class _MyQuotationsPageState extends State<MyQuotationsPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _quotations;
+  List<Map<String, dynamic>> _quotations = [];
   String _selectedFilter = 'todas';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -48,40 +50,54 @@ class _MyQuotationsPageState extends State<MyQuotationsPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadQuotations();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase - cotizaciones del tecnico actual
-    _quotations = [
-      {
-        'id': '1',
-        'solicitud_descripcion': 'Fuga de agua en el bano principal',
-        'cliente_nombre': 'Maria Garcia',
-        'cliente_foto': 'https://via.placeholder.com/150/555879/FFFFFF?text=MG',
-        'monto': 150000,
-        'fecha': DateTime.now().subtract(const Duration(hours: 5)),
-        'estado': 'pendiente',
-      },
-      {
-        'id': '2',
-        'solicitud_descripcion': 'Reparacion de puerta de madera',
-        'cliente_nombre': 'Ana Rodriguez',
-        'cliente_foto': 'https://via.placeholder.com/150/98A1BC/FFFFFF?text=AR',
-        'monto': 200000,
-        'fecha': DateTime.now().subtract(const Duration(days: 1)),
-        'estado': 'aceptada',
-      },
-      {
-        'id': '3',
-        'solicitud_descripcion': 'Instalacion de tomacorrientes',
-        'cliente_nombre': 'Juan Perez',
-        'cliente_foto': 'https://via.placeholder.com/150/DED3C4/555879?text=JP',
-        'monto': 80000,
-        'fecha': DateTime.now().subtract(const Duration(days: 3)),
-        'estado': 'rechazada',
-      },
-    ];
+  Future<void> _loadQuotations() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Obtener el perfil del técnico
+      final technicianProfile = await DatabaseService.getTechnicianProfile(userId);
+      if (technicianProfile == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Cargar cotizaciones del técnico
+      final quotations = await DatabaseService.getTechnicianQuotes(technicianProfile['id']);
+      
+      if (mounted) {
+        setState(() {
+          _quotations = quotations.map((q) {
+            final serviceRequest = q['service_requests'] as Map<String, dynamic>?;
+            final cliente = serviceRequest?['users'] as Map<String, dynamic>?;
+            return {
+              ...q,
+              'solicitud_descripcion': serviceRequest?['descripcion_problema'] ?? 'Sin descripción',
+              'cliente_nombre': cliente?['nombre_completo'] ?? 'Cliente',
+              'cliente_foto': cliente?['avatar_url'] ?? 'https://via.placeholder.com/150/555879/FFFFFF?text=U',
+              'fecha': q['created_at'] != null ? DateTime.parse(q['created_at']) : DateTime.now(),
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar cotizaciones: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

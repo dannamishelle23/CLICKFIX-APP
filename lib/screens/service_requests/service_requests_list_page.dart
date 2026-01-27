@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service_request_detail/service_request_detail_page.dart';
+import '../../services/database_service.dart';
 
 class ServiceRequestsListPage extends StatefulWidget {
   const ServiceRequestsListPage({super.key});
@@ -20,8 +21,8 @@ class _ServiceRequestsListPageState extends State<ServiceRequestsListPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Datos de muestra - TODO: obtener de Supabase
-  late List<Map<String, dynamic>> serviceRequests;
+  List<Map<String, dynamic>> serviceRequests = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -51,45 +52,36 @@ class _ServiceRequestsListPageState extends State<ServiceRequestsListPage>
     _fadeController.forward();
     _slideController.forward();
 
-    // Inicializar datos de muestra
-    _initializeSampleData();
+    // Cargar datos de Supabase
+    _loadServiceRequests();
   }
 
-  void _initializeSampleData() {
-    serviceRequests = [
-      {
-        'id': '1',
-        'descripcion_problema': 'Reparación de grieta en pared',
-        'direccion': 'Calle 50 #12-45, Apartamento 302, Bogotá',
-        'estado': 'asignado',
-        'fecha': DateTime.now().subtract(const Duration(days: 5)),
-        'cotizaciones': 2,
-      },
-      {
-        'id': '2',
-        'descripcion_problema': 'Instalación de puerta nueva',
-        'direccion': 'Avenida Caracas #68-90, Bogotá',
-        'estado': 'solicitud',
-        'fecha': DateTime.now().subtract(const Duration(days: 2)),
-        'cotizaciones': 0,
-      },
-      {
-        'id': '3',
-        'descripcion_problema': 'Reparación de tubería en cocina',
-        'direccion': 'Carrera 15 #85-34, Apartamento 501, Bogotá',
-        'estado': 'completado',
-        'fecha': DateTime.now().subtract(const Duration(days: 15)),
-        'cotizaciones': 3,
-      },
-      {
-        'id': '4',
-        'descripcion_problema': 'Cambio de cerraduras',
-        'direccion': 'Calle 72 #10-50, Bogotá',
-        'estado': 'cancelado',
-        'fecha': DateTime.now().subtract(const Duration(days: 20)),
-        'cotizaciones': 1,
-      },
-    ];
+  Future<void> _loadServiceRequests() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final requests = await DatabaseService.getServiceRequests(clientId: userId);
+      if (mounted) {
+        setState(() {
+          serviceRequests = requests;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar solicitudes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -152,7 +144,16 @@ class _ServiceRequestsListPageState extends State<ServiceRequestsListPage>
   }
 
   /// Formatear fecha a formato relativo
-  String _formatDate(DateTime date) {
+  String _formatDate(dynamic dateValue) {
+    DateTime date;
+    if (dateValue is DateTime) {
+      date = dateValue;
+    } else if (dateValue is String) {
+      date = DateTime.parse(dateValue);
+    } else {
+      return '';
+    }
+
     final now = DateTime.now();
     final difference = now.difference(date);
 
@@ -171,6 +172,8 @@ class _ServiceRequestsListPageState extends State<ServiceRequestsListPage>
 
   /// Cancelar solicitud
   void _cancelServiceRequest(int index) {
+    final requestId = serviceRequests[index]['id'];
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -191,17 +194,31 @@ class _ServiceRequestsListPageState extends State<ServiceRequestsListPage>
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                serviceRequests[index]['estado'] = 'cancelado';
-              });
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Solicitud cancelada'),
-                  backgroundColor: Color(0xFF555879),
-                ),
-              );
+              try {
+                await DatabaseService.updateServiceRequestStatus(requestId, 'cancelado');
+                setState(() {
+                  serviceRequests[index]['estado'] = 'cancelado';
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Solicitud cancelada'),
+                      backgroundColor: Color(0xFF555879),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al cancelar: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Sí, cancelar'),
           ),

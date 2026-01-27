@@ -308,8 +308,124 @@ class DatabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  // ========================================================================
+  // STORAGE - BUCKETS (avatars, portfolio, certificados)
+  // ========================================================================
+
+  /// Subir avatar de usuario al bucket 'avatars'
+  /// Retorna la URL pública del archivo
+  static Future<String?> uploadAvatar(String userId, List<int> bytes, String extension) async {
+    final path = '$userId/avatar.$extension';
+    try {
+      await _client.storage.from('avatars').uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(upsert: true),
+      );
+      return _client.storage.from('avatars').getPublicUrl(path);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener URL del avatar de un usuario
+  static String getAvatarUrl(String userId, {String extension = 'jpg'}) {
+    return _client.storage.from('avatars').getPublicUrl('$userId/avatar.$extension');
+  }
+
+  /// Eliminar avatar de usuario
+  static Future<void> deleteAvatar(String userId, String extension) async {
+    await _client.storage.from('avatars').remove(['$userId/avatar.$extension']);
+  }
+
+  /// Subir foto al portfolio del técnico
+  /// Retorna la URL pública del archivo
+  static Future<String?> uploadPortfolioImage(String technicianId, List<int> bytes, String fileName) async {
+    final path = '$technicianId/$fileName';
+    try {
+      await _client.storage.from('portfolio').uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(upsert: true),
+      );
+      return _client.storage.from('portfolio').getPublicUrl(path);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Listar fotos del portfolio de un técnico
+  static Future<List<String>> getPortfolioImages(String technicianId) async {
+    try {
+      final files = await _client.storage.from('portfolio').list(path: technicianId);
+      return files.map((file) => 
+        _client.storage.from('portfolio').getPublicUrl('$technicianId/${file.name}')
+      ).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Eliminar foto del portfolio
+  static Future<void> deletePortfolioImage(String technicianId, String fileName) async {
+    await _client.storage.from('portfolio').remove(['$technicianId/$fileName']);
+  }
+
+  /// Subir certificado del técnico
+  /// Retorna la URL pública del archivo
+  static Future<String?> uploadCertificate(String technicianId, List<int> bytes, String fileName) async {
+    final path = '$technicianId/$fileName';
+    try {
+      await _client.storage.from('certificados').uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(upsert: true),
+      );
+      return _client.storage.from('certificados').getPublicUrl(path);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Listar certificados de un técnico
+  static Future<List<Map<String, String>>> getCertificateFiles(String technicianId) async {
+    try {
+      final files = await _client.storage.from('certificados').list(path: technicianId);
+      return files.map((file) => {
+        'name': file.name,
+        'url': _client.storage.from('certificados').getPublicUrl('$technicianId/${file.name}'),
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Eliminar certificado del storage
+  static Future<void> deleteCertificateFile(String technicianId, String fileName) async {
+    await _client.storage.from('certificados').remove(['$technicianId/$fileName']);
+  }
+
+  /// Método genérico para subir archivo a cualquier bucket
   static Future<String?> uploadFile(String bucket, String path, List<int> bytes) async {
-    await _client.storage.from(bucket).uploadBinary(path, bytes as dynamic);
+    try {
+      await _client.storage.from(bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(upsert: true),
+      );
+      return _client.storage.from(bucket).getPublicUrl(path);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Obtener URL pública de un archivo
+  static String getFileUrl(String bucket, String path) {
     return _client.storage.from(bucket).getPublicUrl(path);
+  }
+
+  /// Eliminar archivo de cualquier bucket
+  static Future<void> deleteFile(String bucket, String path) async {
+    await _client.storage.from(bucket).remove([path]);
   }
 }

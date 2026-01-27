@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});
@@ -12,9 +13,10 @@ class _AdminUsersPageState extends State<AdminUsersPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _users;
+  List<Map<String, dynamic>> _users = [];
   String _selectedFilter = 'todos';
   final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -30,40 +32,35 @@ class _AdminUsersPageState extends State<AdminUsersPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadUsers();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _users = [
-      {
-        'id': '1',
-        'nombre': 'Maria Garcia',
-        'email': 'maria@email.com',
-        'telefono': '+57 300 1234567',
-        'rol': 'cliente',
-        'estado': 'activo',
-        'created_at': DateTime.now().subtract(const Duration(days: 30)),
-      },
-      {
-        'id': '2',
-        'nombre': 'Carlos Martinez',
-        'email': 'carlos@email.com',
-        'telefono': '+57 310 9876543',
-        'rol': 'tecnico',
-        'estado': 'activo',
-        'created_at': DateTime.now().subtract(const Duration(days: 45)),
-      },
-      {
-        'id': '3',
-        'nombre': 'Ana Rodriguez',
-        'email': 'ana@email.com',
-        'telefono': '+57 320 5555555',
-        'rol': 'cliente',
-        'estado': 'inactivo',
-        'created_at': DateTime.now().subtract(const Duration(days: 60)),
-      },
-    ];
+  Future<void> _loadUsers() async {
+    try {
+      final users = await DatabaseService.getUsers();
+      
+      if (mounted) {
+        setState(() {
+          _users = users.map((u) => {
+            ...u,
+            'nombre': u['nombre_completo'] ?? 'Sin nombre',
+            'estado': u['estado'] ?? 'activo',
+            'created_at': u['created_at'] != null ? DateTime.parse(u['created_at']) : DateTime.now(),
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar usuarios: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

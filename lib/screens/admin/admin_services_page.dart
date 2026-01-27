@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminServicesPage extends StatefulWidget {
   const AdminServicesPage({super.key});
@@ -12,8 +13,9 @@ class _AdminServicesPageState extends State<AdminServicesPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _services;
+  List<Map<String, dynamic>> _services = [];
   String _selectedFilter = 'todos';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,49 +31,45 @@ class _AdminServicesPageState extends State<AdminServicesPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadServices();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _services = [
-      {
-        'id': '1',
-        'descripcion': 'Reparacion de tuberia',
-        'cliente': 'Maria Garcia',
-        'tecnico': 'Carlos Martinez',
-        'monto': 150000,
-        'estado': 'en_progreso',
-        'fecha': DateTime.now().subtract(const Duration(hours: 2)),
-      },
-      {
-        'id': '2',
-        'descripcion': 'Instalacion electrica',
-        'cliente': 'Juan Perez',
-        'tecnico': 'Pedro Gomez',
-        'monto': 200000,
-        'estado': 'completado',
-        'fecha': DateTime.now().subtract(const Duration(days: 1)),
-      },
-      {
-        'id': '3',
-        'descripcion': 'Reparacion de puerta',
-        'cliente': 'Ana Rodriguez',
-        'tecnico': 'Luis Hernandez',
-        'monto': 80000,
-        'estado': 'completado',
-        'fecha': DateTime.now().subtract(const Duration(days: 3)),
-      },
-      {
-        'id': '4',
-        'descripcion': 'Pintura de sala',
-        'cliente': 'Carlos Lopez',
-        'tecnico': 'Miguel Torres',
-        'monto': 350000,
-        'estado': 'pendiente',
-        'fecha': DateTime.now().subtract(const Duration(hours: 5)),
-      },
-    ];
+  Future<void> _loadServices() async {
+    try {
+      final services = await DatabaseService.getServices();
+      
+      if (mounted) {
+        setState(() {
+          _services = services.map((s) {
+            final serviceRequest = s['service_requests'] as Map<String, dynamic>?;
+            final cliente = serviceRequest?['users'] as Map<String, dynamic>?;
+            final technician = s['technicians'] as Map<String, dynamic>?;
+            final techUser = technician?['users'] as Map<String, dynamic>?;
+            final quote = s['quotes'] as Map<String, dynamic>?;
+            return {
+              ...s,
+              'descripcion': serviceRequest?['descripcion_problema'] ?? 'Sin descripción',
+              'cliente': cliente?['nombre_completo'] ?? 'Cliente',
+              'tecnico': techUser?['nombre_completo'] ?? 'Técnico',
+              'monto': quote?['monto'] ?? 0,
+              'estado': s['estado'] ?? 'pendiente',
+              'fecha': s['created_at'] != null ? DateTime.parse(s['created_at']) : DateTime.now(),
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar servicios: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

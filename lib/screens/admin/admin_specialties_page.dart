@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class AdminSpecialtiesPage extends StatefulWidget {
   const AdminSpecialtiesPage({super.key});
@@ -12,7 +13,8 @@ class _AdminSpecialtiesPageState extends State<AdminSpecialtiesPage>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  late List<Map<String, dynamic>> _specialties;
+  List<Map<String, dynamic>> _specialties = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -28,19 +30,36 @@ class _AdminSpecialtiesPageState extends State<AdminSpecialtiesPage>
     );
 
     _fadeController.forward();
-    _initializeSampleData();
+    _loadSpecialties();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase
-    _specialties = [
-      {'id': '1', 'nombre': 'Plomeria', 'descripcion': 'Reparacion de tuberias, grifos, sanitarios', 'tecnicos': 12},
-      {'id': '2', 'nombre': 'Electricidad', 'descripcion': 'Instalaciones electricas, reparaciones', 'tecnicos': 15},
-      {'id': '3', 'nombre': 'Carpinteria', 'descripcion': 'Muebles, puertas, ventanas de madera', 'tecnicos': 8},
-      {'id': '4', 'nombre': 'Pintura', 'descripcion': 'Pintura interior y exterior', 'tecnicos': 10},
-      {'id': '5', 'nombre': 'Albanileria', 'descripcion': 'Construccion, reparacion de paredes', 'tecnicos': 6},
-      {'id': '6', 'nombre': 'Cerrajeria', 'descripcion': 'Cerraduras, llaves, seguridad', 'tecnicos': 4},
-    ];
+  Future<void> _loadSpecialties() async {
+    try {
+      final specialties = await DatabaseService.getSpecialties();
+      
+      if (mounted) {
+        setState(() {
+          _specialties = specialties.map((s) {
+            final technicianCount = s['technician_specialties'] as List<dynamic>? ?? [];
+            return {
+              ...s,
+              'tecnicos': technicianCount.length,
+            };
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar especialidades: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
