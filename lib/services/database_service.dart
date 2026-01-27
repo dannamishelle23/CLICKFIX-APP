@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DatabaseService {
@@ -314,7 +315,7 @@ class DatabaseService {
 
   /// Subir avatar de usuario al bucket 'avatars'
   /// Retorna la URL pública del archivo
-  static Future<String?> uploadAvatar(String userId, List<int> bytes, String extension) async {
+  static Future<String?> uploadAvatar(String userId, Uint8List bytes, String extension) async {
     final path = '$userId/avatar.$extension';
     try {
       await _client.storage.from('avatars').uploadBinary(
@@ -340,7 +341,7 @@ class DatabaseService {
 
   /// Subir foto al portfolio del técnico
   /// Retorna la URL pública del archivo
-  static Future<String?> uploadPortfolioImage(String technicianId, List<int> bytes, String fileName) async {
+  static Future<String?> uploadPortfolioImage(String technicianId, Uint8List bytes, String fileName) async {
     final path = '$technicianId/$fileName';
     try {
       await _client.storage.from('portfolio').uploadBinary(
@@ -373,7 +374,7 @@ class DatabaseService {
 
   /// Subir certificado del técnico
   /// Retorna la URL pública del archivo
-  static Future<String?> uploadCertificate(String technicianId, List<int> bytes, String fileName) async {
+  static Future<String?> uploadCertificate(String technicianId, Uint8List bytes, String fileName) async {
     final path = '$technicianId/$fileName';
     try {
       await _client.storage.from('certificados').uploadBinary(
@@ -406,7 +407,7 @@ class DatabaseService {
   }
 
   /// Método genérico para subir archivo a cualquier bucket
-  static Future<String?> uploadFile(String bucket, String path, List<int> bytes) async {
+  static Future<String?> uploadFile(String bucket, String path, Uint8List bytes) async {
     try {
       await _client.storage.from(bucket).uploadBinary(
         path,
