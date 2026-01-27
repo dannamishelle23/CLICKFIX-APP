@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/database_service.dart';
 
 class TechnicianSpecialtiesPage extends StatefulWidget {
   const TechnicianSpecialtiesPage({super.key});
@@ -18,8 +19,10 @@ class _TechnicianSpecialtiesPageState extends State<TechnicianSpecialtiesPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _availableSpecialties;
-  late List<String> _selectedSpecialtyIds;
+  List<Map<String, dynamic>> _availableSpecialties = [];
+  List<String> _selectedSpecialtyIds = [];
+  bool _isLoading = true;
+  String? _technicianId;
 
   @override
   void initState() {
@@ -48,24 +51,56 @@ class _TechnicianSpecialtiesPageState extends State<TechnicianSpecialtiesPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadData();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase - tabla specialties
-    _availableSpecialties = [
-      {'id': '1', 'nombre': 'Plomeria', 'descripcion': 'Reparacion de tuberias, grifos, sanitarios'},
-      {'id': '2', 'nombre': 'Electricidad', 'descripcion': 'Instalaciones electricas, reparaciones'},
-      {'id': '3', 'nombre': 'Carpinteria', 'descripcion': 'Muebles, puertas, ventanas de madera'},
-      {'id': '4', 'nombre': 'Pintura', 'descripcion': 'Pintura interior y exterior'},
-      {'id': '5', 'nombre': 'Albanileria', 'descripcion': 'Construccion, reparacion de paredes'},
-      {'id': '6', 'nombre': 'Cerrajeria', 'descripcion': 'Cerraduras, llaves, seguridad'},
-      {'id': '7', 'nombre': 'Aire Acondicionado', 'descripcion': 'Instalacion y mantenimiento de AC'},
-      {'id': '8', 'nombre': 'Electrodomesticos', 'descripcion': 'Reparacion de electrodomesticos'},
-    ];
+  Future<void> _loadData() async {
+    final userId = DatabaseService.currentUserId;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    // TODO: Obtener de Supabase - tabla technician_specialties
-    _selectedSpecialtyIds = ['1', '3'];
+    try {
+      // Cargar todas las especialidades disponibles
+      final specialties = await DatabaseService.getSpecialties();
+      
+      // Obtener el perfil del técnico
+      final technicianProfile = await DatabaseService.getTechnicianProfile(userId);
+      
+      if (technicianProfile != null) {
+        _technicianId = technicianProfile['id'];
+        
+        // Cargar las especialidades seleccionadas del técnico
+        final techSpecialties = await DatabaseService.getTechnicianSpecialties(_technicianId!);
+        final selectedIds = techSpecialties.map((s) => s['specialty_id'].toString()).toList();
+        
+        if (mounted) {
+          setState(() {
+            _availableSpecialties = specialties;
+            _selectedSpecialtyIds = selectedIds;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _availableSpecialties = specialties;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar especialidades: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -100,26 +135,37 @@ class _TechnicianSpecialtiesPageState extends State<TechnicianSpecialtiesPage>
       return;
     }
 
-    // TODO: Guardar en Supabase
-    // 1. Eliminar especialidades anteriores
-    // await supabase.from('technician_specialties')
-    //   .delete()
-    //   .eq('technician_id', currentTechnicianId);
-    //
-    // 2. Insertar nuevas especialidades
-    // for (var id in _selectedSpecialtyIds) {
-    //   await supabase.from('technician_specialties').insert({
-    //     'technician_id': currentTechnicianId,
-    //     'specialty_id': id,
-    //   });
-    // }
+    if (_technicianId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: No se encontró el perfil de técnico'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Especialidades guardadas correctamente'),
-        backgroundColor: Color(0xFF27AE60),
-      ),
-    );
+    try {
+      await DatabaseService.updateTechnicianSpecialties(_technicianId!, _selectedSpecialtyIds);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Especialidades guardadas correctamente'),
+            backgroundColor: Color(0xFF27AE60),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar especialidades: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // ========================================================================

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../send_quotation/send_quotation_page.dart';
+import '../../services/database_service.dart';
 
 class AvailableRequestsPage extends StatefulWidget {
   const AvailableRequestsPage({super.key});
@@ -19,8 +20,10 @@ class _AvailableRequestsPageState extends State<AvailableRequestsPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late List<Map<String, dynamic>> _requests;
+  List<Map<String, dynamic>> _requests = [];
   String _selectedFilter = 'todas';
+  bool _isLoading = true;
+  List<String> _specialtyFilters = ['todas'];
 
   @override
   void initState() {
@@ -49,46 +52,50 @@ class _AvailableRequestsPageState extends State<AvailableRequestsPage>
     _fadeController.forward();
     _slideController.forward();
 
-    _initializeSampleData();
+    _loadRequests();
   }
 
-  void _initializeSampleData() {
-    // TODO: Obtener de Supabase - solicitudes que coincidan con especialidades del tecnico
-    _requests = [
-      {
-        'id': '1',
-        'descripcion': 'Fuga de agua en el bano principal',
-        'direccion': 'Calle 45 #12-34, Bogota',
-        'cliente_nombre': 'Maria Garcia',
-        'cliente_foto': 'https://via.placeholder.com/150/555879/FFFFFF?text=MG',
-        'fecha': DateTime.now().subtract(const Duration(hours: 2)),
-        'especialidad': 'Plomeria',
-        'distancia': 2.5,
-        'cotizaciones_recibidas': 3,
-      },
-      {
-        'id': '2',
-        'descripcion': 'Instalacion de tomacorrientes en sala',
-        'direccion': 'Carrera 15 #78-90, Bogota',
-        'cliente_nombre': 'Juan Perez',
-        'cliente_foto': 'https://via.placeholder.com/150/98A1BC/FFFFFF?text=JP',
-        'fecha': DateTime.now().subtract(const Duration(hours: 5)),
-        'especialidad': 'Electricidad',
-        'distancia': 4.2,
-        'cotizaciones_recibidas': 1,
-      },
-      {
-        'id': '3',
-        'descripcion': 'Reparacion de puerta de madera',
-        'direccion': 'Avenida 68 #23-45, Bogota',
-        'cliente_nombre': 'Ana Rodriguez',
-        'cliente_foto': 'https://via.placeholder.com/150/DED3C4/555879?text=AR',
-        'fecha': DateTime.now().subtract(const Duration(days: 1)),
-        'especialidad': 'Carpinteria',
-        'distancia': 1.8,
-        'cotizaciones_recibidas': 5,
-      },
-    ];
+  Future<void> _loadRequests() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Cargar solicitudes disponibles (estado = 'solicitud')
+      final requests = await DatabaseService.getAvailableRequests();
+      
+      // Cargar especialidades para los filtros
+      final specialties = await DatabaseService.getSpecialties();
+      final filters = ['todas', ...specialties.map((s) => s['nombre'] as String)];
+      
+      if (mounted) {
+        setState(() {
+          _requests = requests.map((r) {
+            // Formatear datos para la UI
+            final cliente = r['users'] as Map<String, dynamic>?;
+            return {
+              ...r,
+              'cliente_nombre': cliente?['nombre_completo'] ?? 'Cliente',
+              'cliente_foto': cliente?['avatar_url'] ?? 'https://via.placeholder.com/150/555879/FFFFFF?text=U',
+              'fecha': r['created_at'] != null ? DateTime.parse(r['created_at']) : DateTime.now(),
+              'especialidad': r['especialidad'] ?? 'General',
+              'distancia': 0.0, // Se calcularía con geolocalización
+              'cotizaciones_recibidas': 0, // Se obtendría de la tabla quotes
+            };
+          }).toList();
+          _specialtyFilters = filters;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar solicitudes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -183,27 +190,20 @@ class _AvailableRequestsPageState extends State<AvailableRequestsPage>
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
-          onPressed: () {
-            // TODO: Recargar solicitudes de Supabase
-            setState(() {
-              _initializeSampleData();
-            });
-          },
+          onPressed: _loadRequests,
         ),
       ],
     );
   }
 
   Widget _buildFilterChips() {
-    final filters = ['todas', 'Plomeria', 'Electricidad', 'Carpinteria'];
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
-          children: filters.map((filter) {
+          children: _specialtyFilters.map((filter) {
             final isSelected = _selectedFilter == filter;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
