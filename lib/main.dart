@@ -111,35 +111,13 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     _setupAuthListener();
-    _loadUserRole();
-  }
 
-  Future<void> _loadUserRole() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      try {
-        // Primero intentar obtener el rol desde la tabla users
-        final response = await Supabase.instance.client
-            .from('users')
-            .select('rol')
-            .eq('id', user.id)
-            .maybeSingle();
-        
-        if (response != null && response['rol'] != null) {
-          _userRole = response['rol'];
-        } else {
-          // Si no está en la tabla users, usar userMetadata como fallback
-          _userRole = user.userMetadata?['rol'] ?? 'cliente';
-        }
-      } catch (e) {
-        // Si hay error, usar userMetadata como fallback
-        _userRole = user.userMetadata?['rol'] ?? 'cliente';
-      }
-    }
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+    //Si ya hay sesion cargar rol
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session?.user != null) {
+      _loadUserRole();
+    } else {
+      _isLoading = false;
     }
   }
 
@@ -153,28 +131,19 @@ class _AuthGateState extends State<AuthGate> {
         return;
       }
 
-      if (event == AuthChangeEvent.signedIn) {
-        if (!isManualLogin) {
-          pendingConfirmationMessage =
-              'Cuenta confirmada. Por favor inicia sesion.';
-          await Future.delayed(const Duration(seconds: 2));
-          await Supabase.instance.client.auth.signOut();
-        } else {
-          if (session?.user != null) {
-            // Mostrar loading mientras se carga el rol
-            if (mounted) {
-              setState(() {
-                _isLoading = true;
-              });
-            }
-            await OneSignalService.setUserId(session!.user.id);
-            // Cargar el rol desde la base de datos
-            await _loadUserRole();
-            await OneSignalService.setUserTags({'rol': _userRole ?? 'cliente'});
-          }
+      if (event == AuthChangeEvent.signedIn && session?.user != null) {
+        if (mounted) {
+          setState(() => _isLoading = true);
         }
+
+        await OneSignalService.setUserId(session!.user.id);
+        await _loadUserRole();
+
+        if (_userRole != null) {
+          await OneSignalService.setUserTags({'rol': _userRole!});
+        }
+
         isManualLogin = false;
-        if (mounted) setState(() {});
       }
 
       if (event == AuthChangeEvent.signedOut) {
@@ -185,6 +154,52 @@ class _AuthGateState extends State<AuthGate> {
       }
     });
   }
+
+  Future<void> _loadUserRole() async {
+  final user = Supabase.instance.client.auth.currentUser;
+  if (user == null) {
+    if (mounted) setState(() => _isLoading = false);
+    return;
+  }
+
+  try {
+    debugPrint('AUTH UID: ${user.id}');
+    debugPrint('EMAIL: ${user.email}');
+
+    final response = await Supabase.instance.client
+        .from('users')
+        .select('rol')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    debugPrint('RESPUESTA USERS: $response');
+
+    if (response == null) {
+      debugPrint('❌ No existe fila en users para este UID');
+      if (mounted) {
+        setState(() {
+          _userRole = null;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _userRole = response['rol'];
+        _isLoading = false;
+      });
+    }
+  } catch (e, st) {
+    debugPrint('ERROR cargando rol: $e');
+    debugPrint('$st');
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +225,15 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    final rol = _userRole ?? 'cliente';
+    if (_userRole == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final rol = _userRole!;
 
     if (rol == 'admin') {
       return const AdminDashboardPage();

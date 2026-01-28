@@ -101,7 +101,7 @@ class _RecommendedTechniciansWidgetState extends State<RecommendedTechniciansWid
       return const Padding(
         padding: EdgeInsets.all(16),
         child: Text(
-          'No hay tecnicos disponibles en tu zona',
+          'No hay técnicos disponibles en tu zona',
           style: TextStyle(color: Color(0xFF98A1BC)),
         ),
       );

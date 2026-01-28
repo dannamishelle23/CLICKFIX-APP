@@ -102,13 +102,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
       await _authService.updatePassword(_passwordCtrl.text.trim());
 
       if (mounted) {
-        _showMessage('Contrasena actualizada correctamente');
+        _showMessage('Contraseña actualizada correctamente');
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError('Error al actualizar la contrasena');
+      _showError('Error al actualizar la contraseña');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -151,7 +151,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               ),
               const SizedBox(height: 16),
               const Text(
-                'Nueva contrasena',
+                'Nueva contraseña',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -160,7 +160,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               ),
               const SizedBox(height: 8),
               const Text(
-                'Ingresa tu nueva contrasena',
+                'Ingresa tu nueva contraseña',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -170,7 +170,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               const SizedBox(height: 32),
               AuthInput(
                 controller: _passwordCtrl,
-                label: 'Nueva contrasena',
+                label: 'Nueva contraseña',
                 prefixIcon: Icons.lock_outline,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
@@ -188,7 +188,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                     return 'Este campo no puede quedar vacio';
                   }
                   if (!(_hasMinLength && _hasNumber && _hasSymbol)) {
-                    return 'La contrasena no cumple los requisitos';
+                    return 'La contraseña no cumple los requisitos';
                   }
                   return null;
                 },
@@ -240,19 +240,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               ],
               AuthInput(
                 controller: _confirmCtrl,
-                label: 'Confirmar contrasena',
+                label: 'Confirmar contraseña',
                 prefixIcon: Icons.lock_outline,
                 obscureText: true,
                 validator: (value) {
                   if (value != _passwordCtrl.text) {
-                    return 'Las contrasenas no coinciden';
+                    return 'Las contraseñas no coinciden';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
               AuthButton(
-                text: 'Actualizar contrasena',
+                text: 'Actualizar contraseña',
                 loading: _loading,
                 onPressed: (_passwordStrength == 1.0 && !_loading)
                     ? _updatePassword

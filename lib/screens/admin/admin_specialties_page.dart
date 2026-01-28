@@ -14,7 +14,7 @@ class _AdminSpecialtiesPageState extends State<AdminSpecialtiesPage>
   late Animation<double> _fadeAnimation;
 
   List<Map<String, dynamic>> _specialties = [];
-  bool _isLoading = true;
+
 
   @override
   void initState() {

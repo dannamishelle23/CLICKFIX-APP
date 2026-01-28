@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white70,
+                        color: Color.fromARGB(179, 20, 10, 10),
                         fontFamily: 'Montserrat',
                       ),
                     ),
@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 16,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Correo electronico',
+                              labelText: 'Correo electrónico',
                               labelStyle: TextStyle(
                                 color: Colors.grey[600],
                                 fontFamily: 'Montserrat',
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          // Campo de contrasena
+                          // Campo de contraseña
                           TextFormField(
                             controller: _passwordCtrl,
                             obscureText: _obscurePassword,

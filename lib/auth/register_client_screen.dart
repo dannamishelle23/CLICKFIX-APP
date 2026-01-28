@@ -142,7 +142,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen>
       _showError('Este correo ya esta registrado');
     } else if (lowerMessage.contains('password should be') ||
         lowerMessage.contains('password is too weak')) {
-      _showError('La contrasena es muy debil');
+      _showError('La contraseña es muy debil');
     } else if (lowerMessage.contains('invalid email')) {
       _showError('El correo electronico no es valido');
     } else {
@@ -272,7 +272,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen>
               ),
               AuthInput(
                 controller: _passwordCtrl,
-                label: 'Contrasena',
+                label: 'Contraseña',
                 prefixIcon: Icons.lock_outline,
                 obscureText: _obscurePassword,
                 suffixIcon: IconButton(
@@ -290,7 +290,7 @@ class _RegisterClientScreenState extends State<RegisterClientScreen>
                     return 'Este campo no puede quedar vacio';
                   }
                   if (!(_hasMinLength && _hasNumber && _hasSymbol)) {
-                    return 'La contrasena no cumple los requisitos';
+                    return 'La contraseña no cumple los requisitos';
                   }
                   return null;
                 },
@@ -342,12 +342,12 @@ class _RegisterClientScreenState extends State<RegisterClientScreen>
               ],
               AuthInput(
                 controller: _confirmCtrl,
-                label: 'Confirmar contrasena',
+                label: 'Confirmar contraseña',
                 prefixIcon: Icons.lock_outline,
                 obscureText: true,
                 validator: (value) {
                   if (value != _passwordCtrl.text) {
-                    return 'Las contrasenas no coinciden';
+                    return 'Las contraseñas no coinciden';
                   }
                   return null;
                 },
