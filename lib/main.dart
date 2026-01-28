@@ -104,11 +104,43 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _showResetPassword = false;
+  bool _isLoading = true;
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
     _setupAuthListener();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        // Primero intentar obtener el rol desde la tabla users
+        final response = await Supabase.instance.client
+            .from('users')
+            .select('rol')
+            .eq('id', user.id)
+            .maybeSingle();
+        
+        if (response != null && response['rol'] != null) {
+          _userRole = response['rol'];
+        } else {
+          // Si no está en la tabla users, usar userMetadata como fallback
+          _userRole = user.userMetadata?['rol'] ?? 'cliente';
+        }
+      } catch (e) {
+        // Si hay error, usar userMetadata como fallback
+        _userRole = user.userMetadata?['rol'] ?? 'cliente';
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _setupAuthListener() {
@@ -130,8 +162,9 @@ class _AuthGateState extends State<AuthGate> {
         } else {
           if (session?.user != null) {
             await OneSignalService.setUserId(session!.user.id);
-            final rol = session.user.userMetadata?['rol'] ?? 'cliente';
-            await OneSignalService.setUserTags({'rol': rol});
+            // Cargar el rol desde la base de datos
+            await _loadUserRole();
+            await OneSignalService.setUserTags({'rol': _userRole ?? 'cliente'});
           }
         }
         isManualLogin = false;
@@ -140,6 +173,8 @@ class _AuthGateState extends State<AuthGate> {
 
       if (event == AuthChangeEvent.signedOut) {
         await OneSignalService.removeUserId();
+        _userRole = null;
+        _isLoading = true;
         if (mounted) setState(() {});
       }
     });
@@ -159,9 +194,17 @@ class _AuthGateState extends State<AuthGate> {
       return LoginScreen(confirmationMessage: msg);
     }
 
-    final user = Supabase.instance.client.auth.currentUser;
-    final metadata = user?.userMetadata;
-    final rol = metadata?['rol'] ?? 'cliente';
+    // Mostrar loading mientras se carga el rol
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4EBD3),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF555879)),
+        ),
+      );
+    }
+
+    final rol = _userRole ?? 'cliente';
 
     if (rol == 'admin') {
       return const AdminDashboardPage();
