@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -19,6 +20,7 @@ class _UserProfilePageState extends State<UserProfilePage>
   late TextEditingController _telefonoController;
 
   bool _isEditing = false;
+  bool _isLoading = true;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -38,25 +40,23 @@ class _UserProfilePageState extends State<UserProfilePage>
   void initState() {
     super.initState();
 
-    // Datos de ejemplo (serán reemplazados por datos de Supabase)
+    // Inicializar con datos vacíos
     _originalData = {
-      'id': '550e8400-e29b-41d4-a716-446655440000',
-      'cedula': '1098765432',
-      'nombres_completos': 'María Claudia Rodríguez García',
-      'email': 'maria.rodriguez@mail.com',
-      'telefono': '+57 310 123 4567',
+      'id': '',
+      'cedula': '',
+      'nombres_completos': '',
+      'email': '',
+      'telefono': '',
       'rol': 'cliente',
       'foto_url': null,
       'estado': 'activo',
-      'created_at': '2023-06-20T14:22:00Z',
+      'created_at': '',
     };
 
     _currentData = Map.from(_originalData);
 
-    _nombresController = TextEditingController(
-      text: _currentData['nombres_completos'],
-    );
-    _telefonoController = TextEditingController(text: _currentData['telefono']);
+    _nombresController = TextEditingController();
+    _telefonoController = TextEditingController();
 
     // Animaciones
     _fadeController = AnimationController(
@@ -79,8 +79,79 @@ class _UserProfilePageState extends State<UserProfilePage>
           CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
         );
 
-    _fadeController.forward();
-    _slideController.forward();
+    // Cargar datos del usuario desde Supabase
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Obtener datos de la tabla users
+      final response = await Supabase.instance.client
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response != null) {
+        _originalData = {
+          'id': response['id'] ?? user.id,
+          'cedula': response['cedula'] ?? '',
+          'nombres_completos': response['nombre_completo'] ?? user.userMetadata?['nombre_completo'] ?? 'Usuario',
+          'email': response['email'] ?? user.email ?? '',
+          'telefono': response['telefono'] ?? '',
+          'rol': response['rol'] ?? 'cliente',
+          'foto_url': response['avatar_url'],
+          'estado': response['estado'] ?? 'activo',
+          'created_at': response['created_at'] ?? '',
+        };
+      } else {
+        // Si no hay datos en la tabla users, usar los metadatos de auth
+        _originalData = {
+          'id': user.id,
+          'cedula': user.userMetadata?['cedula'] ?? '',
+          'nombres_completos': user.userMetadata?['nombre_completo'] ?? 'Usuario',
+          'email': user.email ?? '',
+          'telefono': user.userMetadata?['telefono'] ?? '',
+          'rol': user.userMetadata?['rol'] ?? 'cliente',
+          'foto_url': null,
+          'estado': 'activo',
+          'created_at': user.createdAt,
+        };
+      }
+
+      _currentData = Map.from(_originalData);
+      _nombresController.text = _currentData['nombres_completos'] ?? '';
+      _telefonoController.text = _currentData['telefono'] ?? '';
+
+    } catch (e) {
+      // En caso de error, usar datos de auth como fallback
+      _originalData = {
+        'id': user.id,
+        'cedula': user.userMetadata?['cedula'] ?? '',
+        'nombres_completos': user.userMetadata?['nombre_completo'] ?? 'Usuario',
+        'email': user.email ?? '',
+        'telefono': user.userMetadata?['telefono'] ?? '',
+        'rol': user.userMetadata?['rol'] ?? 'cliente',
+        'foto_url': null,
+        'estado': 'activo',
+        'created_at': user.createdAt,
+      };
+      _currentData = Map.from(_originalData);
+      _nombresController.text = _currentData['nombres_completos'] ?? '';
+      _telefonoController.text = _currentData['telefono'] ?? '';
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      _fadeController.forward();
+      _slideController.forward();
+    }
   }
 
   @override
@@ -226,29 +297,33 @@ class _UserProfilePageState extends State<UserProfilePage>
     return Scaffold(
       backgroundColor: const Color(0xFFF4EBD3),
       appBar: _buildAppBar(),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: Column(
-              children: [
-                _buildProfilePhotoSection(),
-                const SizedBox(height: 32),
-                _buildPersonalDataSection(),
-                const SizedBox(height: 24),
-                _buildStateSection(),
-                const SizedBox(height: 24),
-                _buildReadOnlyFieldsSection(),
-                const SizedBox(height: 32),
-                _buildActionButtons(),
-                const SizedBox(height: 20),
-              ],
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF555879)),
+            )
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  child: Column(
+                    children: [
+                      _buildProfilePhotoSection(),
+                      const SizedBox(height: 32),
+                      _buildPersonalDataSection(),
+                      const SizedBox(height: 24),
+                      _buildStateSection(),
+                      const SizedBox(height: 24),
+                      _buildReadOnlyFieldsSection(),
+                      const SizedBox(height: 32),
+                      _buildActionButtons(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       floatingActionButton: _isEditing
           ? null
           : FloatingActionButton(
