@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String _mapAuthError(String message) {
     if (message.contains('Invalid login credentials')) {
-      return 'Correo o contrasena incorrectos';
+      return 'Correo o contraseña incorrectos';
     }
     if (message.contains('Email not confirmed')) {
       return 'Debes confirmar tu correo electronico';
@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 16,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Contrasena',
+                              labelText: 'Contraseña',
                               labelStyle: TextStyle(
                                 color: Colors.grey[600],
                                 fontFamily: 'Montserrat',
@@ -310,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Ingrese su contrasena';
+                                return 'Ingrese su contraseña';
                               }
                               return null;
                             },
@@ -329,7 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                               child: const Text(
-                                'Olvidaste tu contrasena?',
+                                '¿Olvidaste tu contraseña?',
                                 style: TextStyle(
                                   color: Color(0xFF555879),
                                   fontWeight: FontWeight.w500,
