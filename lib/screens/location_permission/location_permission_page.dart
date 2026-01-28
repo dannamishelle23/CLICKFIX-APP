@@ -51,11 +51,19 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
         widget.onPermissionDenied();
       }
     } catch (e) {
+      // Si hay error, continuar sin ubicación (no es crítico)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('No se pudo acceder a la ubicacion. Puedes continuar sin ella.'),
+            backgroundColor: Color(0xFF555879),
+          ),
         );
       }
+      // Marcar como preguntado pero no concedido
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('location_permission_asked', true);
+      await prefs.setBool('location_permission_granted', false);
       widget.onPermissionDenied();
     } finally {
       if (mounted) setState(() => _isLoading = false);

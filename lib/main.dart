@@ -161,6 +161,12 @@ class _AuthGateState extends State<AuthGate> {
           await Supabase.instance.client.auth.signOut();
         } else {
           if (session?.user != null) {
+            // Mostrar loading mientras se carga el rol
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
             await OneSignalService.setUserId(session!.user.id);
             // Cargar el rol desde la base de datos
             await _loadUserRole();
