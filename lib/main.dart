@@ -638,7 +638,7 @@ class TechnicianDashboard extends StatelessWidget {
             _buildMenuCard(
               context,
               icon: Icons.star,
-              title: 'Mis Resenas',
+              title: 'Mis Reseñas',
               subtitle: 'Ver calificaciones recibidas',
               route: '/receivedReviews',
               color: const Color(0xFF9B59B6),
